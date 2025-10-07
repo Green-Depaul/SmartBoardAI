@@ -1,0 +1,19 @@
+import os
+from pydantic import BaseModel
+
+class Settings(BaseModel):
+    app_host: str = os.getenv("APP_HOST", "0.0.0.0")
+    app_port: int = int(os.getenv("APP_PORT", "8080"))
+    app_env: str = os.getenv("APP_ENV", "dev")
+    cors_origins: list[str] = [o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",")]
+
+    java_base_url: str = os.getenv("JAVA_BASE_URL", "http://localhost:8081")
+    java_health_path: str = os.getenv("JAVA_HEALTH_PATH", "/actuator/health")
+    java_api_key: str = os.getenv("JAVA_API_KEY", "")
+    java_auth_bearer: str = os.getenv("JAVA_AUTH_BEARER", "")
+
+    together_api_key: str = os.getenv("TOGETHER_API_KEY", "")
+    together_base_url: str = os.getenv("TOGETHER_BASE_URL", "https://api.together.xyz/v1")
+    together_model: str = os.getenv("TOGETHER_MODEL", "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo")
+
+settings = Settings()
