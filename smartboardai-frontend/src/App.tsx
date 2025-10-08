@@ -1,42 +1,44 @@
-import { useState } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { LandingPage } from "./components/LandingPage";
 import { LoginPage } from "./components/LoginPage";
 import { SignupPage } from "./components/SignupPage";
 
-type Page = "landing" | "login" | "signup";
+function LandingRoute() {
+  const navigate = useNavigate();
+  return (
+    <LandingPage
+      onNavigateToLogin={() => navigate("/login")}
+      onNavigateToSignup={() => navigate("/signup")}
+    />
+  );
+}
+
+function LoginRoute() {
+  const navigate = useNavigate();
+  return (
+    <LoginPage
+      onNavigateBack={() => navigate("/")}
+      onNavigateToSignup={() => navigate("/signup")}
+    />
+  );
+}
+
+function SignupRoute() {
+  const navigate = useNavigate();
+  return (
+    <SignupPage
+      onNavigateBack={() => navigate("/")}
+      onNavigateToLogin={() => navigate("/login")}
+    />
+  );
+}
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>("landing");
-
-  const navigateToPage = (page: Page) => {
-    setCurrentPage(page);
-  };
-
-  const navigateToLanding = () => navigateToPage("landing");
-  const navigateToLogin = () => navigateToPage("login");
-  const navigateToSignup = () => navigateToPage("signup");
-
-  switch (currentPage) {
-    case "login":
-      return (
-        <LoginPage 
-          onNavigateBack={navigateToLanding}
-          onNavigateToSignup={navigateToSignup}
-        />
-      );
-    case "signup":
-      return (
-        <SignupPage 
-          onNavigateBack={navigateToLanding}
-          onNavigateToLogin={navigateToLogin}
-        />
-      );
-    default:
-      return (
-        <LandingPage 
-          onNavigateToLogin={navigateToLogin}
-          onNavigateToSignup={navigateToSignup}
-        />
-      );
-  }
+  return (
+    <Routes>
+      <Route path="/" element={<LandingRoute />} />
+      <Route path="/login" element={<LoginRoute />} />
+      <Route path="/signup" element={<SignupRoute />} />
+    </Routes>
+  );
 }

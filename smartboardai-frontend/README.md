@@ -28,6 +28,19 @@
   - Vite serves on http://localhost:5173 by default. If the port is in use, it will auto-pick the next one (e.g., 5174).
   - If the page doesn’t update, try a hard refresh.
 
+  ### Backend (Spring Boot) integration
+
+  - The dev server proxies API calls from `/api` to `http://localhost:8080` by default.
+  - To change the target, set an env var before running: `VITE_PROXY_TARGET=http://localhost:9000`
+  - Configure your Spring Boot controllers to serve endpoints like `/api/auth/login`, `/api/auth/signup`, `/api/ai/generate-tickets`.
+  - Frontend API helper: `src/services/api.ts` reads `VITE_API_BASE_URL` (defaults to `/api`).
+
+  ### Routes
+
+  - `/` → Landing
+  - `/login` → Login
+  - `/signup` → Signup
+
   ## Color Palette
 
   Use these across components via CSS variables and utilities (e.g., `bg-primary`, `text-primary`, `bg-accent`, `bg-background`, `text-muted-foreground`).
