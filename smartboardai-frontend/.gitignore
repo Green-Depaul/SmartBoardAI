@@ -1,0 +1,10 @@
+# Node
+node_modules/
+*.log
+
+# Vite build output
+/dist
+
+# Editor
+.vscode/
+.DS_Store
