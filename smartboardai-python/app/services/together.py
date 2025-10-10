@@ -1,6 +1,6 @@
 import httpx
 import uuid
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from app.config import settings
 from app.logging_config import together_logger, error_logger
 
