@@ -27,7 +27,7 @@ const features = [
 
 export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPageProps) {
   return (
-  <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center px-4 py-20 text-center">
         <div className="max-w-4xl mx-auto">
