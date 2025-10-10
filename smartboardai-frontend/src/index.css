@@ -535,6 +535,14 @@
     justify-content: center;
   }
 
+  .justify-start {
+    justify-content: flex-start;
+  }
+
+  .justify-end {
+    justify-content: flex-end;
+  }
+
   .gap-1\.5 {
     gap: calc(var(--spacing) * 1.5);
   }
