@@ -5,6 +5,7 @@ import { Brain, Kanban, Zap } from "lucide-react";
 interface LandingPageProps {
   onNavigateToLogin: () => void;
   onNavigateToSignup: () => void;
+  onNavigateToChat: () => void;
 }
 
 const features = [
@@ -25,7 +26,7 @@ const features = [
   }
 ];
 
-export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPageProps) {
+export function LandingPage({ onNavigateToLogin, onNavigateToSignup, onNavigateToChat }: LandingPageProps) {
   return (
   <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -38,6 +39,13 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
             Turn your ideas into organized tasks instantly with AI
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              onClick={onNavigateToChat}
+              size="lg"
+              className="px-8 bg-primary hover:bg-primary/90"
+            >
+              Try AI Chat
+            </Button>
             <Button 
               onClick={onNavigateToLogin}
               variant="outline"
