@@ -1,56 +1,61 @@
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { LandingPage } from "./components/LandingPage";
 import { LoginPage } from "./components/LoginPage";
 import { SignupPage } from "./components/SignupPage";
 import { ChatPage } from "./components/ChatPage";
+import { KanbanBoard } from "./components/KanbanBoard";
 
-function LandingRoute() {
-  const navigate = useNavigate();
-  return (
-    <LandingPage
-      onNavigateToLogin={() => navigate("/login")}
-      onNavigateToSignup={() => navigate("/signup")}
-      onNavigateToChat={() => navigate("/chat")}
-    />
-  );
-}
-
-function LoginRoute() {
-  const navigate = useNavigate();
-  return (
-    <LoginPage
-      onNavigateBack={() => navigate("/")}
-      onNavigateToSignup={() => navigate("/signup")}
-    />
-  );
-}
-
-function SignupRoute() {
-  const navigate = useNavigate();
-  return (
-    <SignupPage
-      onNavigateBack={() => navigate("/")}
-      onNavigateToLogin={() => navigate("/login")}
-    />
-  );
-}
-
-function ChatRoute() {
-  const navigate = useNavigate();
-  return (
-    <ChatPage
-      onNavigateBack={() => navigate("/")}
-    />
-  );
-}
+type Page = "landing" | "login" | "signup" | "chat" | "kanban";
 
 export default function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<LandingRoute />} />
-      <Route path="/login" element={<LoginRoute />} />
-      <Route path="/signup" element={<SignupRoute />} />
-      <Route path="/chat" element={<ChatRoute />} />
-    </Routes>
-  );
+  const [currentPage, setCurrentPage] = useState<Page>("landing");
+
+  const navigateToPage = (page: Page) => {
+    setCurrentPage(page);
+  };
+
+  const navigateToLanding = () => navigateToPage("landing");
+  const navigateToLogin = () => navigateToPage("login");
+  const navigateToSignup = () => navigateToPage("signup");
+  const navigateToChat = () => navigateToPage("chat");
+  const navigateToKanban = () => navigateToPage("kanban");
+
+  switch (currentPage) {
+    case "login":
+      return (
+        <LoginPage 
+          onNavigateBack={navigateToLanding}
+          onNavigateToSignup={navigateToSignup}
+          onNavigateToChat={navigateToChat}
+        />
+      );
+    case "signup":
+      return (
+        <SignupPage 
+          onNavigateBack={navigateToLanding}
+          onNavigateToLogin={navigateToLogin}
+          onNavigateToChat={navigateToChat}
+        />
+      );
+    case "chat":
+      return (
+        <ChatPage 
+          onNavigateBack={navigateToLanding}
+          onNavigateToKanban={navigateToKanban}
+        />
+      );
+    case "kanban":
+      return (
+        <KanbanBoard 
+          onNavigateBack={navigateToChat}
+        />
+      );
+    default:
+      return (
+        <LandingPage 
+          onNavigateToLogin={navigateToLogin}
+          onNavigateToSignup={navigateToSignup}
+        />
+      );
+  }
 }
