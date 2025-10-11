@@ -6,6 +6,7 @@ interface LandingPageProps {
   onNavigateToLogin: () => void;
   onNavigateToSignup: () => void;
   onNavigateToChat: () => void;
+  onNavigateToBoard: () => void;
 }
 
 const features = [
@@ -26,7 +27,7 @@ const features = [
   }
 ];
 
-export function LandingPage({ onNavigateToLogin, onNavigateToSignup, onNavigateToChat }: LandingPageProps) {
+export function LandingPage({ onNavigateToLogin, onNavigateToSignup, onNavigateToChat, onNavigateToBoard }: LandingPageProps) {
   return (
   <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -45,6 +46,14 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup, onNavigateT
               className="px-8 bg-primary hover:bg-primary/90"
             >
               Try AI Chat
+            </Button>
+            <Button 
+              onClick={onNavigateToBoard}
+              variant="outline"
+              size="lg"
+              className="px-8"
+            >
+              View Board
             </Button>
             <Button 
               onClick={onNavigateToLogin}

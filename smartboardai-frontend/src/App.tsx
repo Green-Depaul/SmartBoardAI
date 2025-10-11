@@ -3,6 +3,7 @@ import { LandingPage } from "./components/LandingPage";
 import { LoginPage } from "./components/LoginPage";
 import { SignupPage } from "./components/SignupPage";
 import { ChatPage } from "./components/ChatPage";
+import { BoardPage } from "./components/BoardPage";
 
 function LandingRoute() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ function LandingRoute() {
       onNavigateToLogin={() => navigate("/login")}
       onNavigateToSignup={() => navigate("/signup")}
       onNavigateToChat={() => navigate("/chat")}
+      onNavigateToBoard={() => navigate("/board")}
     />
   );
 }
@@ -44,6 +46,15 @@ function ChatRoute() {
   );
 }
 
+function BoardRoute() {
+  const navigate = useNavigate();
+  return (
+    <BoardPage
+      onNavigateBack={() => navigate("/")}
+    />
+  );
+}
+
 export default function App() {
   return (
     <Routes>
@@ -51,6 +62,7 @@ export default function App() {
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/signup" element={<SignupRoute />} />
       <Route path="/chat" element={<ChatRoute />} />
+      <Route path="/board" element={<BoardRoute />} />
     </Routes>
   );
 }
