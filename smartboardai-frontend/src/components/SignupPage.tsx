@@ -8,9 +8,10 @@ import { ArrowLeft } from "lucide-react";
 interface SignupPageProps {
   onNavigateBack: () => void;
   onNavigateToLogin: () => void;
+  onNavigateToChat: () => void;
 }
 
-export function SignupPage({ onNavigateBack, onNavigateToLogin }: SignupPageProps) {
+export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat }: SignupPageProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +25,8 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin }: SignupPageProp
     }
     // Handle signup logic here
     console.log("Signup attempt:", { name, email, password });
+    // Navigate to chat page after successful signup
+    onNavigateToChat();
   };
 
   return (

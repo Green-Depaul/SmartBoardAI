@@ -8,9 +8,10 @@ import { ArrowLeft } from "lucide-react";
 interface LoginPageProps {
   onNavigateBack: () => void;
   onNavigateToSignup: () => void;
+  onNavigateToChat: () => void;
 }
 
-export function LoginPage({ onNavigateBack, onNavigateToSignup }: LoginPageProps) {
+export function LoginPage({ onNavigateBack, onNavigateToSignup, onNavigateToChat }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -18,6 +19,8 @@ export function LoginPage({ onNavigateBack, onNavigateToSignup }: LoginPageProps
     e.preventDefault();
     // Handle login logic here
     console.log("Login attempt:", { email, password });
+    // Navigate to chat page after successful login
+    onNavigateToChat();
   };
 
   return (
