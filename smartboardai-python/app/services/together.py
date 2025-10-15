@@ -1,6 +1,6 @@
 import httpx
 import uuid
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from app.config import settings
 from app.logging_config import together_logger, error_logger
 
@@ -62,6 +62,9 @@ async def chat_completion(messages: list, temperature: float = 0.2, max_tokens: 
             # Parse successful response
             data = response.json()
             content = data["choices"][0]["message"]["content"]
+            
+            # Log the raw content for debugging
+            together_logger.debug(f"Raw AI response content: {content[:500]}...")
             
             # Log usage statistics if available
             if "usage" in data:

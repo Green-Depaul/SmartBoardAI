@@ -1,12 +1,13 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
+import uuid
 
 class PromptRequest(BaseModel):
     user_id: str = Field(..., description="ID used by Java to look up user/team/org info")
     project_id: str = Field(..., description="ID used by Java to fetch project context")
     message: str = Field(..., min_length=1, description="Raw user input from the frontend")
     temperature: Optional[float] = 0.2
-    max_tokens: Optional[int] = 512
+    max_tokens: Optional[float] = 512
 
 class PromptResponse(BaseModel):
     message_id: str
@@ -44,3 +45,33 @@ class GenerateStepsResponse(BaseModel):
     project_summary: str
     recommendations: List[str] = []
     meta: Dict[str, Any] = {}
+
+# New models for /generate_plan endpoint
+class Task(BaseModel):
+    """Individual task model compatible with Java backend"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str = Field(..., description="Task title")
+    description: str = Field(..., description="Detailed task description")
+    estimated_hours: Optional[int] = Field(None, description="Estimated hours to complete")
+    priority: str = Field(default="medium", description="Priority: low, medium, high")
+    category: Optional[str] = Field(None, description="Task category")
+    dependencies: List[str] = Field(default=[], description="Task IDs this depends on")
+
+class GeneratePlanRequest(BaseModel):
+    """Request model for /generate_plan endpoint"""
+    prompt: str = Field(..., min_length=1, description="Project description or prompt")
+    project_type: Optional[str] = Field(None, description="Type of project")
+    complexity: Optional[str] = Field("medium", description="Project complexity: low, medium, high")
+    team_size: Optional[int] = Field(None, description="Number of team members")
+    timeline: Optional[str] = Field(None, description="Project timeline")
+    max_tasks: Optional[int] = Field(10, description="Maximum number of tasks to generate")
+
+class GeneratePlanResponse(BaseModel):
+    """Response model for /generate_plan endpoint"""
+    success: bool
+    tasks: List[Task]
+    total_estimated_hours: Optional[int] = None
+    project_summary: Optional[str] = None
+    recommendations: List[str] = []
+    error_message: Optional[str] = None
+    request_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
