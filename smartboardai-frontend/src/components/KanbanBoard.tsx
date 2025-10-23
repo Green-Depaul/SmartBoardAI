@@ -1,131 +1,79 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { ArrowLeft, Plus, MoreVertical, Clock, User } from "lucide-react";
+import { ArrowLeft, Plus, MoreVertical, Clock, User, RefreshCw } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
+import { api, type Task as APITask } from "../services/api";
 
 interface KanbanBoardProps {
   onNavigateBack: () => void;
+  currentUser?: { id: number; email: string; firstName: string; lastName: string };
 }
 
-export type TaskStatus = "backlog" | "ready" | "in-progress" | "in-review" | "done";
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
 
 export interface Task {
   id: string;
   title: string;
   description?: string;
   status: TaskStatus;
-  priority?: "low" | "medium" | "high";
-  assignee?: string;
-  dueDate?: string;
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  estimatedHours?: number;
+  createdAt?: string;
 }
 
 const ITEM_TYPE = "TASK";
 
-const initialTasks: Task[] = [
-  {
-    id: "1",
-    title: "Design landing page mockups",
-    description: "Create initial wireframes and high-fidelity designs",
-    status: "done",
-    priority: "high",
-    assignee: "Design Team",
-    dueDate: "Oct 5",
-  },
-  {
-    id: "2",
-    title: "Set up project repository",
-    description: "Initialize Git repo and configure CI/CD pipeline",
-    status: "done",
-    priority: "high",
-    assignee: "DevOps",
-    dueDate: "Oct 6",
-  },
-  {
-    id: "3",
-    title: "Implement authentication system",
-    description: "Build login and signup functionality",
-    status: "in-review",
-    priority: "high",
-    assignee: "Backend Team",
-    dueDate: "Oct 12",
-  },
-  {
-    id: "4",
-    title: "Create chat interface",
-    description: "Build AI chat component with message handling",
-    status: "in-review",
-    priority: "high",
-    assignee: "Frontend Team",
-    dueDate: "Oct 12",
-  },
-  {
-    id: "5",
-    title: "Develop Kanban board UI",
-    description: "Create drag-and-drop task board with columns",
-    status: "in-progress",
-    priority: "high",
-    assignee: "Frontend Team",
-    dueDate: "Oct 14",
-  },
-  {
-    id: "6",
-    title: "Integrate AI API for task generation",
-    description: "Connect to AI service for intelligent task breakdown",
-    status: "ready",
-    priority: "high",
-    assignee: "Backend Team",
-    dueDate: "Oct 16",
-  },
-  {
-    id: "7",
-    title: "Implement task editing and deletion",
-    description: "Add CRUD operations for task management",
-    status: "ready",
-    priority: "medium",
-    assignee: "Full Stack",
-    dueDate: "Oct 18",
-  },
-  {
-    id: "8",
-    title: "Add user profile settings",
-    description: "Create profile page with customization options",
-    status: "backlog",
-    priority: "medium",
-    assignee: "Frontend Team",
-    dueDate: "Oct 20",
-  },
-  {
-    id: "9",
-    title: "Set up database schema",
-    description: "Design and implement database structure for tasks and users",
-    status: "backlog",
-    priority: "high",
-    assignee: "Backend Team",
-    dueDate: "Oct 22",
-  },
-  {
-    id: "10",
-    title: "Create analytics dashboard",
-    description: "Build dashboard to track project progress and metrics",
-    status: "backlog",
-    priority: "low",
-    assignee: "Full Stack",
-    dueDate: "Oct 25",
-  },
-  {
-    id: "11",
-    title: "Write API documentation",
-    description: "Document all API endpoints and usage examples",
-    status: "backlog",
-    priority: "medium",
-    assignee: "Backend Team",
-    dueDate: "Oct 28",
-  },
+// Convert API task to local task format
+const convertAPITaskToLocal = (apiTask: APITask): Task => ({
+  id: apiTask.id.toString(),
+  title: apiTask.title,
+  description: apiTask.description,
+  status: apiTask.status as TaskStatus,
+  priority: apiTask.priority,
+  estimatedHours: apiTask.estimatedHours,
+  createdAt: apiTask.createdAt,
+});
+
+const columns: { id: TaskStatus; title: string; color: string }[] = [
+  { id: "TODO", title: "To Do", color: "bg-gray-100" },
+  { id: "IN_PROGRESS", title: "In Progress", color: "bg-blue-100" },
+  { id: "IN_REVIEW", title: "In Review", color: "bg-yellow-100" },
+  { id: "DONE", title: "Done", color: "bg-green-100" },
 ];
+
+const getPriorityColor = (priority?: string) => {
+  switch (priority) {
+    case "URGENT":
+      return "bg-red-500 text-white";
+    case "HIGH":
+      return "bg-orange-500 text-white";
+    case "MEDIUM":
+      return "bg-yellow-500 text-black";
+    case "LOW":
+      return "bg-green-500 text-white";
+    default:
+      return "bg-gray-500 text-white";
+  }
+};
+
+const getPriorityLabel = (priority?: string) => {
+  switch (priority) {
+    case "URGENT":
+      return "Urgent";
+    case "HIGH":
+      return "High";
+    case "MEDIUM":
+      return "Medium";
+    case "LOW":
+      return "Low";
+    default:
+      return "Medium";
+  }
+};
 
 interface TaskCardProps {
   task: Task;
@@ -133,191 +81,241 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, onMoveTask }: TaskCardProps) {
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging }, drag] = useDrag(() => ({
     type: ITEM_TYPE,
     item: { id: task.id, status: task.status },
     collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
+      isDragging: !!monitor.isDragging(),
     }),
-  });
-
-  const priorityColors = {
-    low: "bg-blue-100 text-blue-700 border-blue-200",
-    medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    high: "bg-red-100 text-red-700 border-red-200",
-  };
+  }));
 
   return (
     <div
       ref={drag}
-      className={`bg-white rounded-lg border border-gray-200 p-4 cursor-move hover:shadow-md transition-shadow ${
-        isDragging ? "opacity-50" : "opacity-100"
-      }`}
+      className={`mb-3 cursor-move ${isDragging ? "opacity-50" : ""}`}
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h3 className="flex-1">{task.title}</h3>
-        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0">
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {task.description && (
-        <p className="text-sm text-gray-600 mb-3">{task.description}</p>
-      )}
-
-      <div className="flex items-center gap-2 flex-wrap">
-        {task.priority && (
+      <Card className="p-3 hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between mb-2">
+          <h4 className="font-medium text-sm leading-tight">{task.title}</h4>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+            <MoreVertical className="h-3 w-3" />
+          </Button>
+        </div>
+        
+        {task.description && (
+          <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+            {task.description}
+          </p>
+        )}
+        
+        <div className="flex items-center justify-between">
           <Badge
-            variant="outline"
-            className={`text-xs ${priorityColors[task.priority]}`}
+            className={`text-xs ${getPriorityColor(task.priority)}`}
+            variant="secondary"
           >
-            {task.priority}
+            {getPriorityLabel(task.priority)}
           </Badge>
-        )}
-        {task.assignee && (
-          <div className="flex items-center gap-1 text-xs text-gray-600">
-            <User className="h-3 w-3" />
-            <span>{task.assignee}</span>
-          </div>
-        )}
-        {task.dueDate && (
-          <div className="flex items-center gap-1 text-xs text-gray-600">
-            <Clock className="h-3 w-3" />
-            <span>{task.dueDate}</span>
-          </div>
-        )}
-      </div>
+          
+          {task.estimatedHours && (
+            <div className="flex items-center text-xs text-gray-500">
+              <Clock className="h-3 w-3 mr-1" />
+              {task.estimatedHours}h
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }
 
-interface ColumnProps {
-  status: TaskStatus;
-  title: string;
+interface TaskColumnProps {
+  column: { id: TaskStatus; title: string; color: string };
   tasks: Task[];
   onMoveTask: (taskId: string, newStatus: TaskStatus) => void;
-  color: string;
 }
 
-function Column({ status, title, tasks, onMoveTask, color }: ColumnProps) {
-  const [{ isOver }, drop] = useDrop({
+function TaskColumn({ column, tasks, onMoveTask }: TaskColumnProps) {
+  const [{ isOver }, drop] = useDrop(() => ({
     accept: ITEM_TYPE,
     drop: (item: { id: string; status: TaskStatus }) => {
-      if (item.status !== status) {
-        onMoveTask(item.id, status);
+      if (item.status !== column.id) {
+        onMoveTask(item.id, column.id);
       }
     },
     collect: (monitor) => ({
-      isOver: monitor.isOver(),
+      isOver: !!monitor.isOver(),
     }),
-  });
+  }));
 
   return (
-    <div className="flex flex-col min-w-[300px] max-w-[350px] flex-shrink-0 h-full">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={`w-3 h-3 rounded-full ${color}`}></div>
-          <h2 className="uppercase text-sm tracking-wide text-gray-600">
-            {title}
-          </h2>
-          <Badge variant="secondary" className="rounded-full h-6 w-6 flex items-center justify-center p-0 text-xs">
-            {tasks.length}
-          </Badge>
-        </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <div
-        ref={drop}
-        className={`flex-1 rounded-lg p-3 transition-colors ${
-          isOver ? "bg-blue-50" : "bg-gray-50"
-        } overflow-hidden`}
-      >
-        <ScrollArea className="h-full">
-          <div className="space-y-3 pr-4">
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} onMoveTask={onMoveTask} />
-            ))}
-            {tasks.length === 0 && (
-              <div className="text-center py-8 text-gray-400 text-sm">
-                Drop tasks here
-              </div>
-            )}
+    <div
+      ref={drop}
+      className={`flex-1 min-w-64 ${isOver ? "bg-blue-50" : ""}`}
+    >
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className={`p-3 rounded-t-lg ${column.color}`}>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-gray-800">{column.title}</h3>
+            <Badge variant="secondary" className="bg-white/80 text-gray-600">
+              {tasks.length}
+            </Badge>
           </div>
+        </div>
+        
+        <ScrollArea className="h-96 p-3">
+          {tasks.map((task) => (
+            <TaskCard key={task.id} task={task} onMoveTask={onMoveTask} />
+          ))}
+          
+          {tasks.length === 0 && (
+            <div className="text-center text-gray-500 py-8">
+              <p className="text-sm">No tasks</p>
+            </div>
+          )}
         </ScrollArea>
       </div>
     </div>
   );
 }
 
-export function KanbanBoard({ onNavigateBack }: KanbanBoardProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+export function KanbanBoard({ onNavigateBack, currentUser }: KanbanBoardProps) {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleMoveTask = (taskId: string, newStatus: TaskStatus) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
+  const fetchTasks = async () => {
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const apiTasks = await api.getTasks(currentUser.id);
+      const localTasks = apiTasks.map(convertAPITaskToLocal);
+      setTasks(localTasks);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError("Failed to load tasks. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const columns: { status: TaskStatus; title: string; color: string }[] = [
-    { status: "backlog", title: "Backlog", color: "bg-gray-400" },
-    { status: "ready", title: "Ready", color: "bg-blue-400" },
-    { status: "in-progress", title: "In Progress", color: "bg-yellow-400" },
-    { status: "in-review", title: "In Review", color: "bg-purple-400" },
-    { status: "done", title: "Done", color: "bg-green-400" },
-  ];
+  useEffect(() => {
+    fetchTasks();
+  }, [currentUser]);
 
-  return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="flex flex-col h-screen bg-gray-100">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onNavigateBack}
-                className="shrink-0"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl">Smart Board AI - Task Board</h1>
-                <p className="text-sm text-gray-600">
-                  Organize and track your project tasks
-                </p>
-              </div>
-            </div>
-            <Button className="bg-[#2563eb] hover:bg-[#1e40af]">
-              <Plus className="h-4 w-4 mr-2" />
-              New Task
-            </Button>
-          </div>
+  const handleMoveTask = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      await api.updateTaskStatus(parseInt(taskId), newStatus);
+      
+      // Update local state
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === taskId ? { ...task, status: newStatus } : task
+        )
+      );
+    } catch (err) {
+      console.error("Error updating task status:", err);
+      setError("Failed to update task. Please try again.");
+    }
+  };
+
+  const getTasksByStatus = (status: TaskStatus) => {
+    return tasks.filter(task => task.status === status);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        <header className="flex items-center justify-between gap-4 px-4 py-4 border-b bg-card">
+          <Button variant="ghost" size="icon" onClick={onNavigateBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-semibold">Kanban Board</h1>
+          <div className="w-10" />
         </header>
-
-        {/* Kanban Board */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden">
-          <div className="h-full p-6">
-            <div className="flex gap-4 h-full">
-              {columns.map((column) => (
-                <Column
-                  key={column.status}
-                  status={column.status}
-                  title={column.title}
-                  tasks={tasks.filter((task) => task.status === column.status)}
-                  onMoveTask={handleMoveTask}
-                  color={column.color}
-                />
-              ))}
-            </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
+            <p className="text-gray-600">Loading tasks...</p>
           </div>
         </div>
       </div>
-    </DndProvider>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        <header className="flex items-center justify-between gap-4 px-4 py-4 border-b bg-card">
+          <Button variant="ghost" size="icon" onClick={onNavigateBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-semibold">Kanban Board</h1>
+          <div className="w-10" />
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Please log in to view your Kanban board</p>
+            <Button onClick={onNavigateBack}>Go Back</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-background">
+      {/* Header */}
+      <header className="flex items-center justify-between gap-4 px-4 py-4 border-b bg-card">
+        <Button variant="ghost" size="icon" onClick={onNavigateBack}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-semibold">Kanban Board</h1>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchTasks}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Task
+          </Button>
+        </div>
+      </header>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Kanban Board */}
+      <div className="flex-1 overflow-hidden">
+        <DndProvider backend={HTML5Backend}>
+          <div className="flex gap-4 p-4 h-full overflow-x-auto">
+            {columns.map((column) => (
+              <TaskColumn
+                key={column.id}
+                column={column}
+                tasks={getTasksByStatus(column.id)}
+                onMoveTask={handleMoveTask}
+              />
+            ))}
+          </div>
+        </DndProvider>
+      </div>
+    </div>
   );
 }

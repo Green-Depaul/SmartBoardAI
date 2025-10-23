@@ -4,23 +4,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { ArrowLeft } from "lucide-react";
+import { api, type User } from "../services/api";
 
 interface LoginPageProps {
   onNavigateBack: () => void;
   onNavigateToSignup: () => void;
   onNavigateToChat: () => void;
+  onLoginSuccess: (user: User) => void;
 }
 
-export function LoginPage({ onNavigateBack, onNavigateToSignup, onNavigateToChat }: LoginPageProps) {
+export function LoginPage({ onNavigateBack, onNavigateToSignup, onNavigateToChat, onLoginSuccess }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login attempt:", { email, password });
-    // Navigate to chat page after successful login
-    onNavigateToChat();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const user = await api.login({ email, password });
+      onLoginSuccess(user);
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Invalid email or password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,6 +56,11 @@ export function LoginPage({ onNavigateBack, onNavigateToSignup, onNavigateToChat
             </p>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -75,8 +92,9 @@ export function LoginPage({ onNavigateBack, onNavigateToSignup, onNavigateToChat
                 type="submit" 
                 className="w-full"
                 size="lg"
+                disabled={loading}
               >
-                Log In
+                {loading ? "Signing In..." : "Log In"}
               </Button>
             </form>
 

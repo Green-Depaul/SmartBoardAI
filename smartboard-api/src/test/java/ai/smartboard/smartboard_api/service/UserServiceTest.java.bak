@@ -1,0 +1,331 @@
+package ai.smartboard.smartboard_api.service;
+
+import ai.smartboard.smartboard_api.model.User;
+import ai.smartboard.smartboard_api.repository.UserRepository;
+import ai.smartboard.smartboard_api.service.UserService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.sql.Timestamp;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @InjectMocks
+    private UserService userService;
+
+    private User testUser;
+    private final String TEST_EMAIL = "test@example.com";
+    private final String TEST_PASSWORD = "password123";
+    private final String TEST_FIRST_NAME = "John";
+    private final String TEST_LAST_NAME = "Doe";
+    private final String HASHED_PASSWORD = "hashedPassword123";
+
+    @BeforeEach
+    void setUp() {
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setEmail(TEST_EMAIL);
+        testUser.setPasswordHash(HASHED_PASSWORD);
+        testUser.setFirstName(TEST_FIRST_NAME);
+        testUser.setLastName(TEST_LAST_NAME);
+        testUser.setIsActive(true);
+        testUser.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+    }
+
+    @Test
+    void createUser_Success() {
+        // Given
+        when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
+        when(passwordEncoder.encode(TEST_PASSWORD)).thenReturn(HASHED_PASSWORD);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        User result = userService.createUser(TEST_EMAIL, TEST_PASSWORD, TEST_FIRST_NAME, TEST_LAST_NAME);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(TEST_EMAIL, result.getEmail());
+        assertEquals(TEST_FIRST_NAME, result.getFirstName());
+        assertEquals(TEST_LAST_NAME, result.getLastName());
+        assertEquals(HASHED_PASSWORD, result.getPasswordHash());
+        assertTrue(result.getIsActive());
+        assertNotNull(result.getCreatedAt());
+
+        verify(userRepository).existsByEmail(TEST_EMAIL);
+        verify(passwordEncoder).encode(TEST_PASSWORD);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void createUser_EmailAlreadyExists_ThrowsException() {
+        // Given
+        when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(true);
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.createUser(TEST_EMAIL, TEST_PASSWORD, TEST_FIRST_NAME, TEST_LAST_NAME)
+        );
+
+        assertEquals("User with email " + TEST_EMAIL + " already exists", exception.getMessage());
+        verify(userRepository).existsByEmail(TEST_EMAIL);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void createUser_InvalidEmail_ThrowsException() {
+        // Test null email
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.createUser(null, TEST_PASSWORD, TEST_FIRST_NAME, TEST_LAST_NAME)
+        );
+        assertEquals("Email cannot be null or empty", exception.getMessage());
+
+        // Test empty email
+        exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.createUser("", TEST_PASSWORD, TEST_FIRST_NAME, TEST_LAST_NAME)
+        );
+        assertEquals("Email cannot be null or empty", exception.getMessage());
+
+        // Test whitespace email
+        exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.createUser("   ", TEST_PASSWORD, TEST_FIRST_NAME, TEST_LAST_NAME)
+        );
+        assertEquals("Email cannot be null or empty", exception.getMessage());
+    }
+
+    @Test
+    void createUser_InvalidPassword_ThrowsException() {
+        // Test null password
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.createUser(TEST_EMAIL, null, TEST_FIRST_NAME, TEST_LAST_NAME)
+        );
+        assertEquals("Password cannot be null or empty", exception.getMessage());
+
+        // Test empty password
+        exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.createUser(TEST_EMAIL, "", TEST_FIRST_NAME, TEST_LAST_NAME)
+        );
+        assertEquals("Password cannot be null or empty", exception.getMessage());
+    }
+
+    @Test
+    void createUser_InvalidNames_ThrowsException() {
+        // Test null first name
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.createUser(TEST_EMAIL, TEST_PASSWORD, null, TEST_LAST_NAME)
+        );
+        assertEquals("First name cannot be null or empty", exception.getMessage());
+
+        // Test null last name
+        exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.createUser(TEST_EMAIL, TEST_PASSWORD, TEST_FIRST_NAME, null)
+        );
+        assertEquals("Last name cannot be null or empty", exception.getMessage());
+    }
+
+    @Test
+    void authenticateUser_Success() {
+        // Given
+        when(userRepository.findActiveByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(TEST_PASSWORD, HASHED_PASSWORD)).thenReturn(true);
+
+        // When
+        User result = userService.authenticateUser(TEST_EMAIL, TEST_PASSWORD);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(testUser.getId(), result.getId());
+        assertEquals(testUser.getEmail(), result.getEmail());
+        verify(userRepository).findActiveByEmail(TEST_EMAIL);
+        verify(passwordEncoder).matches(TEST_PASSWORD, HASHED_PASSWORD);
+    }
+
+    @Test
+    void authenticateUser_InvalidPassword_ReturnsNull() {
+        // Given
+        when(userRepository.findActiveByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(TEST_PASSWORD, HASHED_PASSWORD)).thenReturn(false);
+
+        // When
+        User result = userService.authenticateUser(TEST_EMAIL, TEST_PASSWORD);
+
+        // Then
+        assertNull(result);
+        verify(userRepository).findActiveByEmail(TEST_EMAIL);
+        verify(passwordEncoder).matches(TEST_PASSWORD, HASHED_PASSWORD);
+    }
+
+    @Test
+    void authenticateUser_UserNotFound_ReturnsNull() {
+        // Given
+        when(userRepository.findActiveByEmail(TEST_EMAIL)).thenReturn(Optional.empty());
+
+        // When
+        User result = userService.authenticateUser(TEST_EMAIL, TEST_PASSWORD);
+
+        // Then
+        assertNull(result);
+        verify(userRepository).findActiveByEmail(TEST_EMAIL);
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+    }
+
+    @Test
+    void findUserByEmail_Success() {
+        // Given
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
+
+        // When
+        Optional<User> result = userService.findUserByEmail(TEST_EMAIL);
+
+        // Then
+        assertTrue(result.isPresent());
+        assertEquals(testUser.getId(), result.get().getId());
+        verify(userRepository).findByEmail(TEST_EMAIL);
+    }
+
+    @Test
+    void updatePassword_Success() {
+        // Given
+        String currentPassword = "currentPass";
+        String newPassword = "newPass";
+        String newHashedPassword = "newHashedPass";
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(currentPassword, HASHED_PASSWORD)).thenReturn(true);
+        when(passwordEncoder.encode(newPassword)).thenReturn(newHashedPassword);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        boolean result = userService.updatePassword(1L, currentPassword, newPassword);
+
+        // Then
+        assertTrue(result);
+        verify(userRepository).findById(1L);
+        verify(passwordEncoder).matches(currentPassword, HASHED_PASSWORD);
+        verify(passwordEncoder).encode(newPassword);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void updatePassword_WrongCurrentPassword_ReturnsFalse() {
+        // Given
+        String currentPassword = "wrongPass";
+        String newPassword = "newPass";
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(currentPassword, HASHED_PASSWORD)).thenReturn(false);
+
+        // When
+        boolean result = userService.updatePassword(1L, currentPassword, newPassword);
+
+        // Then
+        assertFalse(result);
+        verify(userRepository).findById(1L);
+        verify(passwordEncoder).matches(currentPassword, HASHED_PASSWORD);
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void updatePassword_UserNotFound_ReturnsFalse() {
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When
+        boolean result = userService.updatePassword(1L, "currentPass", "newPass");
+
+        // Then
+        assertFalse(result);
+        verify(userRepository).findById(1L);
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void deactivateUser_Success() {
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        boolean result = userService.deactivateUser(1L);
+
+        // Then
+        assertTrue(result);
+        assertFalse(testUser.getIsActive());
+        verify(userRepository).findById(1L);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void deactivateUser_UserNotFound_ReturnsFalse() {
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When
+        boolean result = userService.deactivateUser(1L);
+
+        // Then
+        assertFalse(result);
+        verify(userRepository).findById(1L);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void updateUserProfile_Success() {
+        // Given
+        String newFirstName = "Jane";
+        String newLastName = "Smith";
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        User result = userService.updateUserProfile(1L, newFirstName, newLastName);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(newFirstName, result.getFirstName());
+        assertEquals(newLastName, result.getLastName());
+        verify(userRepository).findById(1L);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void updateUserProfile_UserNotFound_ReturnsNull() {
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When
+        User result = userService.updateUserProfile(1L, "Jane", "Smith");
+
+        // Then
+        assertNull(result);
+        verify(userRepository).findById(1L);
+        verify(userRepository, never()).save(any(User.class));
+    }
+}
