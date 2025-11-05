@@ -1,0 +1,46 @@
+# Goal: Document and enforce how SmartBoardAI manages secrets, validates API access, protects data in transit/at rest, and reviews security changes.
+
+## Create the branch from main, up to date
+git checkout main
+git pull origin main
+
+## create and push the branch
+git checkout -b security-measure
+git push -u origin security-measure 
+
+## Added a top layer security folder and baseline files
+.
+├─ SECURITY.md                          # high-level policy (already started)
+├─ security/                            # new folder for procedures & runbooks
+│  ├─ SECURITY_MEASURES.md              # detailed procedures (step-by-step below)
+│  ├─ THREAT_MODEL.md                   # risks, mitigations, data flows
+│  ├─ SECRETS_MANAGEMENT.md             # how keys are stored/rotated
+│  ├─ API_HARDENING_CHECKLIST.md        # pre-release checklist
+│  ├─ INCIDENT_RESPONSE_RUNBOOK.md      # what to do when things go wrong
+│  └─ REVIEW_GUIDE.md                   # how to review security PRs
+├─ .github/
+│  ├─ workflows/
+│  │  ├─ codeql.yml                     # GitHub CodeQL scan
+│  │  ├─ dependabot.yml                 # dependency updates
+│  │  └─ secret-scanning.yml            # block secrets in PRs (optional)
+│  ├─ PULL_REQUEST_TEMPLATE.md          # adds a security checklist to PRs
+│  └─ CODEOWNERS                        # security reviewers (enforce approvals)
+├─ .gitignore                           # ensure .env* never committed
+├─ smartboardai-frontend/
+│  └─ .env.example                      # shows required public (non-secret) vars
+├─ smartboard-api/                      # Java backend
+│  ├─ .env.example
+│  └─ src/main/java/.../security/       # API key filter (new)
+├─ smartboardai-python/                 # FastAPI adapter
+│  ├─ .env.example
+│  └─ app/security/                     # API key dependency (new)
+
+Update .gitignore (root & each service if separate repos):
+
+# Never commit secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+
