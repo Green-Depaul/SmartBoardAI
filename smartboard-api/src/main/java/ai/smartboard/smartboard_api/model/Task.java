@@ -15,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Task {
-    
+
     private String id;
     private String boardId; // Which board this task belongs to
     private String title;
@@ -27,7 +27,7 @@ public class Task {
     private LocalDateTime updatedAt;
     private LocalDateTime dueDate;
     private int order; // For ordering tasks within a status column
-    
+
     /**
      * Constructor for creating a new task
      */
@@ -41,21 +41,21 @@ public class Task {
         this.updatedAt = LocalDateTime.now();
         this.order = 0;
     }
-    
+
     /**
      * Simplified constructor
      */
     public Task(String title, String description) {
         this(title, description, TaskStatus.TODO, TaskPriority.MEDIUM);
     }
-    
+
     /**
      * Update the task's timestamp
      */
     public void touch() {
         this.updatedAt = LocalDateTime.now();
     }
-    
+
     /**
      * Move task to a different status
      */
@@ -63,7 +63,7 @@ public class Task {
         this.status = newStatus;
         this.touch();
     }
-    
+
     /**
      * Enum for task status (Kanban columns)
      */
@@ -71,17 +71,17 @@ public class Task {
         TODO("todo"),
         IN_PROGRESS("in_progress"),
         DONE("done");
-        
+
         private final String value;
-        
+
         TaskStatus(String value) {
             this.value = value;
         }
-        
+
         public String getValue() {
             return value;
         }
-        
+
         public static TaskStatus fromString(String value) {
             for (TaskStatus status : TaskStatus.values()) {
                 if (status.value.equalsIgnoreCase(value) || status.name().equalsIgnoreCase(value)) {
@@ -91,7 +91,7 @@ public class Task {
             return TODO; // Default
         }
     }
-    
+
     /**
      * Enum for task priority
      */
@@ -100,17 +100,17 @@ public class Task {
         MEDIUM("medium"),
         HIGH("high"),
         URGENT("urgent");
-        
+
         private final String value;
-        
+
         TaskPriority(String value) {
             this.value = value;
         }
-        
+
         public String getValue() {
             return value;
         }
-        
+
         public static TaskPriority fromString(String value) {
             for (TaskPriority priority : TaskPriority.values()) {
                 if (priority.value.equalsIgnoreCase(value) || priority.name().equalsIgnoreCase(value)) {
@@ -121,4 +121,3 @@ public class Task {
         }
     }
 }
-

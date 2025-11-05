@@ -18,26 +18,25 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/board/items")
-@CrossOrigin(origins = "*") // Configure appropriately for production
+@CrossOrigin(origins = "*")
 public class TaskController {
-    
+
     private final TaskService taskService;
-    
+
     @Autowired
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
-    
+
     /**
      * GET /api/board/items - Get all tasks
-     * This endpoint matches the frontend test expectations
      */
     @GetMapping
     public ResponseEntity<List<Task>> getAllTasks() {
         List<Task> tasks = taskService.getAllTasks();
         return ResponseEntity.ok(tasks);
     }
-    
+
     /**
      * GET /api/board/items/{id} - Get task by ID
      */
@@ -47,7 +46,7 @@ public class TaskController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     /**
      * GET /api/board/items?boardId={boardId} - Get tasks by board ID
      */
@@ -56,7 +55,7 @@ public class TaskController {
         List<Task> tasks = taskService.getTasksByBoardId(boardId);
         return ResponseEntity.ok(tasks);
     }
-    
+
     /**
      * GET /api/board/items?status={status} - Get tasks by status
      */
@@ -70,7 +69,7 @@ public class TaskController {
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
     /**
      * GET /api/board/items?assignedTo={userId} - Get tasks assigned to a user
      */
@@ -79,10 +78,9 @@ public class TaskController {
         List<Task> tasks = taskService.getTasksByAssignedTo(assignedTo);
         return ResponseEntity.ok(tasks);
     }
-    
+
     /**
      * POST /api/board/items - Create a new task
-     * This endpoint matches the frontend test expectations
      */
     @PostMapping
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
@@ -93,10 +91,9 @@ public class TaskController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
-    
+
     /**
      * PUT /api/board/items/{id} - Update a task
-     * This endpoint matches the frontend test expectations
      */
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(@PathVariable String id, @RequestBody Task task) {
@@ -104,7 +101,7 @@ public class TaskController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     /**
      * PATCH /api/board/items/{id}/status - Move task to different status
      */
@@ -120,10 +117,9 @@ public class TaskController {
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
     /**
      * DELETE /api/board/items/{id} - Delete a task
-     * This endpoint matches the frontend test expectations
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable String id) {
@@ -133,4 +129,4 @@ public class TaskController {
         return ResponseEntity.notFound().build();
     }
 }
-
+ 

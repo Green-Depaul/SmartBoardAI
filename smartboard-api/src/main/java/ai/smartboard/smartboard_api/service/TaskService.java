@@ -15,56 +15,56 @@ import java.util.Optional;
  */
 @Service
 public class TaskService {
-    
+
     private final TaskRepository taskRepository;
-    
+
     @Autowired
     public TaskService(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
     }
-    
+
     /**
      * Get all tasks
      */
     public List<Task> getAllTasks() {
         return taskRepository.findAll();
     }
-    
+
     /**
      * Get task by ID
      */
     public Optional<Task> getTaskById(String id) {
         return taskRepository.findById(id);
     }
-    
+
     /**
      * Get tasks by board ID
      */
     public List<Task> getTasksByBoardId(String boardId) {
         return taskRepository.findByBoardId(boardId);
     }
-    
+
     /**
      * Get tasks by status
      */
     public List<Task> getTasksByStatus(TaskStatus status) {
         return taskRepository.findByStatus(status);
     }
-    
+
     /**
      * Get tasks by board ID and status
      */
     public List<Task> getTasksByBoardIdAndStatus(String boardId, TaskStatus status) {
         return taskRepository.findByBoardIdAndStatus(boardId, status);
     }
-    
+
     /**
      * Get tasks assigned to a user
      */
     public List<Task> getTasksByAssignedTo(String userId) {
         return taskRepository.findByAssignedTo(userId);
     }
-    
+
     /**
      * Create a new task
      */
@@ -77,7 +77,7 @@ public class TaskService {
         }
         return taskRepository.save(task);
     }
-    
+
     /**
      * Update an existing task
      */
@@ -108,7 +108,7 @@ public class TaskService {
                     return taskRepository.save(existingTask);
                 });
     }
-    
+
     /**
      * Move task to a different status (column)
      */
@@ -119,7 +119,7 @@ public class TaskService {
                     return taskRepository.save(task);
                 });
     }
-    
+
     /**
      * Delete a task
      */
@@ -129,21 +129,21 @@ public class TaskService {
         }
         return false;
     }
-    
+
     /**
      * Delete all tasks for a board
      */
     public int deleteTasksByBoardId(String boardId) {
         return taskRepository.deleteByBoardId(boardId);
     }
-    
+
     /**
      * Check if task exists
      */
     public boolean taskExists(String id) {
         return taskRepository.existsById(id);
     }
-    
+
     /**
      * Count tasks for a board
      */
@@ -151,4 +151,3 @@ public class TaskService {
         return taskRepository.countByBoardId(boardId);
     }
 }
-

@@ -4,29 +4,54 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { ArrowLeft } from "lucide-react";
+import { api, type User } from "../services/api";
 
 interface SignupPageProps {
   onNavigateBack: () => void;
   onNavigateToLogin: () => void;
   onNavigateToChat: () => void;
+  onSignupSuccess: (user: User) => void;
 }
 
-export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat }: SignupPageProps) {
-  const [name, setName] = useState("");
+export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat, onSignupSuccess }: SignupPageProps) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (password !== confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords don't match!");
       return;
     }
-    // Handle signup logic here
-    console.log("Signup attempt:", { name, email, password });
-    // Navigate to chat page after successful signup
-    onNavigateToChat();
+
+    if (!firstName || !lastName) {
+      setError("Please enter both first and last name!");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const user = await api.signup({ 
+        firstName, 
+        lastName, 
+        email, 
+        password 
+      });
+      onSignupSuccess(user);
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError("Failed to create account. Email might already be in use.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,18 +75,37 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat
             </p>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="bg-input-background"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    className="bg-input-background"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    className="bg-input-background"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -107,8 +151,9 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat
                 type="submit" 
                 className="w-full"
                 size="lg"
+                disabled={loading}
               >
-                Sign Up
+                {loading ? "Creating Account..." : "Sign Up"}
               </Button>
             </form>
 

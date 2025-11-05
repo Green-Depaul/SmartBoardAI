@@ -1,0 +1,301 @@
+package ai.smartboard.smartboard_api.controller;
+
+import ai.smartboard.smartboard_api.model.User;
+import ai.smartboard.smartboard_api.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureTestMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureTestMvc
+@ActiveProfiles("test")
+@Transactional
+class UserControllerIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private User testUser;
+    private final String TEST_EMAIL = "test@example.com";
+    private final String TEST_PASSWORD = "password123";
+    private final String TEST_FIRST_NAME = "John";
+    private final String TEST_LAST_NAME = "Doe";
+
+    @BeforeEach
+    void setUp() {
+        // Clear the database before each test
+        userRepository.deleteAll();
+
+        // Create a test user
+        testUser = new User();
+        testUser.setEmail(TEST_EMAIL);
+        testUser.setPasswordHash(passwordEncoder.encode(TEST_PASSWORD));
+        testUser.setFirstName(TEST_FIRST_NAME);
+        testUser.setLastName(TEST_LAST_NAME);
+        testUser.setIsActive(true);
+        testUser.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        testUser = userRepository.save(testUser);
+    }
+
+    @Test
+    void registerUser_Success() throws Exception {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("email", "newuser@example.com");
+        requestBody.put("password", "newpassword123");
+        requestBody.put("firstName", "Jane");
+        requestBody.put("lastName", "Smith");
+
+        MvcResult result = mockMvc.perform(post("/users/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value("newuser@example.com"))
+                .andExpect(jsonPath("$.firstName").value("Jane"))
+                .andExpect(jsonPath("$.lastName").value("Smith"))
+                .andExpect(jsonPath("$.isActive").value(true))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist())
+                .andReturn();
+
+        // Verify user was saved to database
+        assertTrue(userRepository.existsByEmail("newuser@example.com"));
+    }
+
+    @Test
+    void registerUser_DuplicateEmail_BadRequest() throws Exception {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("email", TEST_EMAIL); // Use existing email
+        requestBody.put("password", "password123");
+        requestBody.put("firstName", "Jane");
+        requestBody.put("lastName", "Smith");
+
+        mockMvc.perform(post("/users/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("User with email " + TEST_EMAIL + " already exists"));
+    }
+
+    @Test
+    void registerUser_MissingFields_BadRequest() throws Exception {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("email", "test@example.com");
+        // Missing password, firstName, lastName
+
+        mockMvc.perform(post("/users/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void loginUser_Success() throws Exception {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("email", TEST_EMAIL);
+        requestBody.put("password", TEST_PASSWORD);
+
+        mockMvc.perform(post("/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(testUser.getId()))
+                .andExpect(jsonPath("$.email").value(TEST_EMAIL))
+                .andExpect(jsonPath("$.firstName").value(TEST_FIRST_NAME))
+                .andExpect(jsonPath("$.lastName").value(TEST_LAST_NAME))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+    }
+
+    @Test
+    void loginUser_InvalidCredentials_Unauthorized() throws Exception {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("email", TEST_EMAIL);
+        requestBody.put("password", "wrongpassword");
+
+        mockMvc.perform(post("/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("Invalid email or password"));
+    }
+
+    @Test
+    void loginUser_NonExistentUser_Unauthorized() throws Exception {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("email", "nonexistent@example.com");
+        requestBody.put("password", TEST_PASSWORD);
+
+        mockMvc.perform(post("/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("Invalid email or password"));
+    }
+
+    @Test
+    void getUserById_Success() throws Exception {
+        mockMvc.perform(get("/users/" + testUser.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(testUser.getId()))
+                .andExpect(jsonPath("$.email").value(TEST_EMAIL))
+                .andExpect(jsonPath("$.firstName").value(TEST_FIRST_NAME))
+                .andExpect(jsonPath("$.lastName").value(TEST_LAST_NAME))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+    }
+
+    @Test
+    void getUserById_NotFound() throws Exception {
+        mockMvc.perform(get("/users/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("User not found"));
+    }
+
+    @Test
+    void getUserByEmail_Success() throws Exception {
+        mockMvc.perform(get("/users/email/" + TEST_EMAIL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(testUser.getId()))
+                .andExpect(jsonPath("$.email").value(TEST_EMAIL))
+                .andExpect(jsonPath("$.firstName").value(TEST_FIRST_NAME))
+                .andExpect(jsonPath("$.lastName").value(TEST_LAST_NAME))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+    }
+
+    @Test
+    void getUserByEmail_NotFound() throws Exception {
+        mockMvc.perform(get("/users/email/nonexistent@example.com"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("User not found"));
+    }
+
+    @Test
+    void updateUserProfile_Success() throws Exception {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("firstName", "UpdatedFirstName");
+        requestBody.put("lastName", "UpdatedLastName");
+
+        mockMvc.perform(put("/users/" + testUser.getId() + "/profile")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(testUser.getId()))
+                .andExpect(jsonPath("$.firstName").value("UpdatedFirstName"))
+                .andExpect(jsonPath("$.lastName").value("UpdatedLastName"))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+
+        // Verify changes were saved
+        User updatedUser = userRepository.findById(testUser.getId()).orElse(null);
+        assertNotNull(updatedUser);
+        assertEquals("UpdatedFirstName", updatedUser.getFirstName());
+        assertEquals("UpdatedLastName", updatedUser.getLastName());
+    }
+
+    @Test
+    void updatePassword_Success() throws Exception {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("currentPassword", TEST_PASSWORD);
+        requestBody.put("newPassword", "newpassword123");
+
+        mockMvc.perform(put("/users/" + testUser.getId() + "/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Password updated successfully"));
+    }
+
+    @Test
+    void updatePassword_WrongCurrentPassword_BadRequest() throws Exception {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("currentPassword", "wrongpassword");
+        requestBody.put("newPassword", "newpassword123");
+
+        mockMvc.perform(put("/users/" + testUser.getId() + "/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid current password or user not found"));
+    }
+
+    @Test
+    void deactivateUser_Success() throws Exception {
+        mockMvc.perform(put("/users/" + testUser.getId() + "/deactivate"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User account deactivated"));
+
+        // Verify user was deactivated
+        User deactivatedUser = userRepository.findById(testUser.getId()).orElse(null);
+        assertNotNull(deactivatedUser);
+        assertFalse(deactivatedUser.getIsActive());
+    }
+
+    @Test
+    void reactivateUser_Success() throws Exception {
+        // First deactivate the user
+        testUser.setIsActive(false);
+        userRepository.save(testUser);
+
+        mockMvc.perform(put("/users/" + testUser.getId() + "/reactivate"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User account reactivated"));
+
+        // Verify user was reactivated
+        User reactivatedUser = userRepository.findById(testUser.getId()).orElse(null);
+        assertNotNull(reactivatedUser);
+        assertTrue(reactivatedUser.getIsActive());
+    }
+
+    @Test
+    void searchUsersByFirstName_Success() throws Exception {
+        mockMvc.perform(get("/users/search/firstname/John"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].firstName").value(TEST_FIRST_NAME))
+                .andExpect(jsonPath("$[0].passwordHash").doesNotExist());
+    }
+
+    @Test
+    void searchUsersByLastName_Success() throws Exception {
+        mockMvc.perform(get("/users/search/lastname/Doe"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lastName").value(TEST_LAST_NAME))
+                .andExpect(jsonPath("$[0].passwordHash").doesNotExist());
+    }
+
+    @Test
+    void getAllUsers_Success() throws Exception {
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(testUser.getId()))
+                .andExpect(jsonPath("$[0].passwordHash").doesNotExist());
+    }
+
+    @Test
+    void healthCheck_Success() throws Exception {
+        mockMvc.perform(get("/users/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("User service is healthy"));
+    }
+}

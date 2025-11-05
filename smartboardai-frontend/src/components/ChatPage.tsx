@@ -2,40 +2,30 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
-import { ArrowLeft, Send, Bot, User, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Send, Bot, User, LayoutGrid, CheckCircle, Clock, AlertCircle, Plus } from "lucide-react";
+import { api, type AIResponse, type TaskSuggestion } from "../services/api";
 
 interface ChatPageProps {
   onNavigateBack: () => void;
   onNavigateToKanban: () => void;
+  currentUser?: { id: number; email: string; firstName: string; lastName: string };
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
-interface Message {
+export interface Message {
   id: string;
   text: string;
   sender: "user" | "ai";
   timestamp: Date;
+  aiResponse?: AIResponse;
 }
 
-const initialMessages: Message[] = [
-  {
-    id: "1",
-    text: "Hello! I'm your Smart Board AI assistant. Tell me about your project or idea, and I'll help you break it down into organized tasks.",
-    sender: "ai",
-    timestamp: new Date(),
-  },
-];
-
-const mockAIResponses = [
-  "Great! Let me help you organize that into tasks. Based on what you've shared, here are some suggested tasks I can create for your board:",
-  "I understand. Let me break that down into actionable steps for you.",
-  "That sounds like an interesting project! I can help you create a structured plan for this.",
-  "Perfect! I'll help you turn these ideas into manageable tasks on your Kanban board.",
-];
-
-export function ChatPage({ onNavigateBack, onNavigateToKanban }: ChatPageProps) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+export function ChatPage({ onNavigateBack, onNavigateToKanban, currentUser, messages, setMessages }: ChatPageProps) {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [addingTasks, setAddingTasks] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -43,7 +33,7 @@ export function ChatPage({ onNavigateBack, onNavigateToKanban }: ChatPageProps) 
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim() || isTyping) return;
 
     const userMessage: Message = {
@@ -54,28 +44,79 @@ export function ChatPage({ onNavigateBack, onNavigateToKanban }: ChatPageProps) 
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue("");
     setIsTyping(true);
+    setError(null);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const aiResponse = await api.generatePlan(currentInput);
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: mockAIResponses[
-          Math.floor(Math.random() * mockAIResponses.length)
-        ],
+        text: aiResponse.message,
+        sender: "ai",
+        timestamp: new Date(),
+        aiResponse: aiResponse,
+      };
+      
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (err) {
+      console.error("Error calling AI service:", err);
+      setError("Sorry, I couldn't process your request. Please try again.");
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Sorry, I encountered an error while processing your request. Please try again.",
         sender: "ai",
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, aiMessage]);
+      
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleAddTaskToKanban = async (taskSuggestion: TaskSuggestion, taskIndex: number) => {
+    if (!currentUser) {
+      setError("Please log in to add tasks to your Kanban board");
+      return;
+    }
+
+    setAddingTasks(prev => new Set(prev).add(taskIndex));
+
+    try {
+      await api.createTaskFromSuggestion({
+        userId: currentUser.id,
+        suggestion: taskSuggestion
+      });
+
+      // Show success message
+      const successMessage: Message = {
+        id: `success-${Date.now()}`,
+        text: `✅ Added "${taskSuggestion.title}" to your Kanban board!`,
+        sender: "ai",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, successMessage]);
+
+    } catch (err) {
+      console.error("Error adding task to Kanban:", err);
+      setError("Failed to add task to Kanban board. Please try again.");
+    } finally {
+      setAddingTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskIndex);
+        return newSet;
+      });
     }
   };
 
@@ -152,6 +193,73 @@ export function ChatPage({ onNavigateBack, onNavigateToKanban }: ChatPageProps) 
                   }`}
                 >
                   <p className="break-words">{message.text}</p>
+                  
+                  {/* Display AI Response with structured plan and tasks */}
+                  {message.aiResponse && (
+                    <div className="mt-4 space-y-4">
+                      {/* Structured Plan */}
+                      <div className="bg-white/10 rounded-lg p-4">
+                        <h3 className="font-semibold mb-2 text-sm">📋 Structured Plan</h3>
+                        <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">
+                          {message.aiResponse.plan}
+                        </pre>
+                      </div>
+                      
+                      {/* Task Suggestions */}
+                      <div className="bg-white/10 rounded-lg p-4">
+                        <h3 className="font-semibold mb-3 text-sm">✅ Suggested Tasks</h3>
+                        <div className="space-y-2">
+                          {message.aiResponse.suggestedTasks.map((task, index) => (
+                            <div key={index} className="bg-white/5 rounded p-3 border-l-2 border-blue-400">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-medium text-sm">{task.title}</h4>
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className={`px-2 py-1 rounded-full text-xs ${
+                                    task.priority === 'HIGH' || task.priority === 'URGENT' 
+                                      ? 'bg-red-500/20 text-red-300' 
+                                      : task.priority === 'MEDIUM'
+                                      ? 'bg-yellow-500/20 text-yellow-300'
+                                      : 'bg-green-500/20 text-green-300'
+                                  }`}>
+                                    {task.priority}
+                                  </span>
+                                  <span className="text-muted-foreground flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {task.estimatedHours}h
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground mb-2">{task.description}</p>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                                  {task.category}
+                                </span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleAddTaskToKanban(task, index)}
+                                  disabled={addingTasks.has(index) || !currentUser}
+                                  className="text-xs h-6 px-2"
+                                >
+                                  {addingTasks.has(index) ? (
+                                    <>
+                                      <Clock className="h-3 w-3 mr-1 animate-spin" />
+                                      Adding...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Plus className="h-3 w-3 mr-1" />
+                                      Add to Kanban
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <span className="text-xs text-muted-foreground px-2">
                   {message.timestamp.toLocaleTimeString([], {
@@ -214,7 +322,7 @@ export function ChatPage({ onNavigateBack, onNavigateToKanban }: ChatPageProps) 
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            Press Enter to send • This is a demo with mock AI responses
+            Press Enter to send • AI will generate structured plans and task suggestions
           </p>
         </div>
       </div>
