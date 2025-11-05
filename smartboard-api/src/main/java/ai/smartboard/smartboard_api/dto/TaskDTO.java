@@ -1,39 +1,43 @@
 package ai.smartboard.smartboard_api.dto;
 
 import ai.smartboard.smartboard_api.model.Task;
-import ai.smartboard.smartboard_api.model.TaskPriority;
-import ai.smartboard.smartboard_api.model.TaskStatus;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
+/**
+ * DTO representation of Task compatible with the new Kanban Task model
+ */
 public class TaskDTO {
-    private Long id;
+    private String id;
+    private String boardId;
     private String title;
     private String description;
-    private TaskStatus status;
-    private TaskPriority priority;
-    private Integer estimatedHours;
-    private Long userId;
-    private Timestamp createdAt;
-    private Timestamp updatedAt;
+    private Task.TaskStatus status;
+    private Task.TaskPriority priority;
+    private String assignedTo;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public TaskDTO() {}
 
     public TaskDTO(Task task) {
         this.id = task.getId();
+        this.boardId = task.getBoardId();
         this.title = task.getTitle();
         this.description = task.getDescription();
         this.status = task.getStatus();
         this.priority = task.getPriority();
-        this.estimatedHours = task.getEstimatedHours();
-        this.userId = task.getUser() != null ? task.getUser().getId() : null;
+        this.assignedTo = task.getAssignedTo();
         this.createdAt = task.getCreatedAt();
         this.updatedAt = task.getUpdatedAt();
     }
 
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+
+    public String getBoardId() { return boardId; }
+    public void setBoardId(String boardId) { this.boardId = boardId; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -41,23 +45,20 @@ public class TaskDTO {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public TaskStatus getStatus() { return status; }
-    public void setStatus(TaskStatus status) { this.status = status; }
+    public Task.TaskStatus getStatus() { return status; }
+    public void setStatus(Task.TaskStatus status) { this.status = status; }
 
-    public TaskPriority getPriority() { return priority; }
-    public void setPriority(TaskPriority priority) { this.priority = priority; }
+    public Task.TaskPriority getPriority() { return priority; }
+    public void setPriority(Task.TaskPriority priority) { this.priority = priority; }
 
-    public Integer getEstimatedHours() { return estimatedHours; }
-    public void setEstimatedHours(Integer estimatedHours) { this.estimatedHours = estimatedHours; }
+    public String getAssignedTo() { return assignedTo; }
+    public void setAssignedTo(String assignedTo) { this.assignedTo = assignedTo; }
 
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
-
-    public Timestamp getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
 
 

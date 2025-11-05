@@ -1,118 +1,153 @@
 package ai.smartboard.smartboard_api.service;
 
-import ai.smartboard.smartboard_api.model.*;
+import ai.smartboard.smartboard_api.model.Task;
+import ai.smartboard.smartboard_api.model.Task.TaskStatus;
 import ai.smartboard.smartboard_api.repository.TaskRepository;
-import ai.smartboard.smartboard_api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service layer for Task operations
+ * Handles business logic for Kanban task cards
+ */
 @Service
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final UserRepository userRepository;
 
     @Autowired
-    public TaskService(TaskRepository taskRepository, UserRepository userRepository) {
+    public TaskService(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
-        this.userRepository = userRepository;
     }
 
-    public Optional<Task> createTask(Long userId, String title, String description, TaskPriority priority, Integer estimatedHours) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()) {
-            return Optional.empty();
+    /**
+     * Get all tasks
+     */
+    public List<Task> getAllTasks() {
+        return taskRepository.findAll();
+    }
+
+    /**
+     * Get task by ID
+     */
+    public Optional<Task> getTaskById(String id) {
+        return taskRepository.findById(id);
+    }
+
+    /**
+     * Get tasks by board ID
+     */
+    public List<Task> getTasksByBoardId(String boardId) {
+        return taskRepository.findByBoardId(boardId);
+    }
+
+    /**
+     * Get tasks by status
+     */
+    public List<Task> getTasksByStatus(TaskStatus status) {
+        return taskRepository.findByStatus(status);
+    }
+
+    /**
+     * Get tasks by board ID and status
+     */
+    public List<Task> getTasksByBoardIdAndStatus(String boardId, TaskStatus status) {
+        return taskRepository.findByBoardIdAndStatus(boardId, status);
+    }
+
+    /**
+     * Get tasks assigned to a user
+     */
+    public List<Task> getTasksByAssignedTo(String userId) {
+        return taskRepository.findByAssignedTo(userId);
+    }
+
+    /**
+     * Create a new task
+     */
+    public Task createTask(Task task) {
+        if (task.getStatus() == null) {
+            task.setStatus(TaskStatus.TODO);
         }
-
-        Task task = new Task(title, description, userOptional.get());
-        task.setPriority(priority != null ? priority : TaskPriority.MEDIUM);
-        task.setEstimatedHours(estimatedHours);
-        task.setStatus(TaskStatus.TODO);
-        task.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-        task.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
-
-        return Optional.of(taskRepository.save(task));
+        if (task.getPriority() == null) {
+            task.setPriority(Task.TaskPriority.MEDIUM);
+        }
+        return taskRepository.save(task);
     }
 
-    public Optional<Task> createTaskFromSuggestion(Long userId, AIResponse.TaskSuggestion suggestion) {
-        TaskPriority priority = suggestion.getPriority() != null ? suggestion.getPriority() : TaskPriority.MEDIUM;
-        return createTask(userId, suggestion.getTitle(), suggestion.getDescription(), priority, suggestion.getEstimatedHours());
+    /**
+     * Update an existing task
+     */
+    public Optional<Task> updateTask(String id, Task updatedTask) {
+        return taskRepository.findById(id)
+                .map(existingTask -> {
+                    if (updatedTask.getTitle() != null) {
+                        existingTask.setTitle(updatedTask.getTitle());
+                    }
+                    if (updatedTask.getDescription() != null) {
+                        existingTask.setDescription(updatedTask.getDescription());
+                    }
+                    if (updatedTask.getStatus() != null) {
+                        existingTask.setStatus(updatedTask.getStatus());
+                    }
+                    if (updatedTask.getPriority() != null) {
+                        existingTask.setPriority(updatedTask.getPriority());
+                    }
+                    if (updatedTask.getAssignedTo() != null) {
+                        existingTask.setAssignedTo(updatedTask.getAssignedTo());
+                    }
+                    if (updatedTask.getDueDate() != null) {
+                        existingTask.setDueDate(updatedTask.getDueDate());
+                    }
+                    if (updatedTask.getOrder() != 0) {
+                        existingTask.setOrder(updatedTask.getOrder());
+                    }
+                    return taskRepository.save(existingTask);
+                });
     }
 
-    public List<Task> getTasksByUserId(Long userId) {
-        return taskRepository.findByUserId(userId);
+    /**
+     * Move task to a different status (column)
+     */
+    public Optional<Task> moveTask(String id, TaskStatus newStatus) {
+        return taskRepository.findById(id)
+                .map(task -> {
+                    task.moveToStatus(newStatus);
+                    return taskRepository.save(task);
+                });
     }
 
-    public List<Task> getTasksByUserIdAndStatus(Long userId, TaskStatus status) {
-        return taskRepository.findByUserIdAndStatus(userId, status);
-    }
-
-    public Optional<Task> updateTaskStatus(Long taskId, TaskStatus newStatus) {
-        return taskRepository.findById(taskId).map(task -> {
-            task.setStatus(newStatus);
-            task.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
-            return taskRepository.save(task);
-        });
-    }
-
-    public Optional<Task> updateTask(Long taskId, String title, String description, TaskPriority priority, Integer estimatedHours) {
-        return taskRepository.findById(taskId).map(task -> {
-            if (title != null) task.setTitle(title);
-            if (description != null) task.setDescription(description);
-            if (priority != null) task.setPriority(priority);
-            if (estimatedHours != null) task.setEstimatedHours(estimatedHours);
-            task.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
-            return taskRepository.save(task);
-        });
-    }
-
-    public boolean deleteTask(Long taskId) {
-        if (taskRepository.existsById(taskId)) {
-            taskRepository.deleteById(taskId);
-            return true;
+    /**
+     * Delete a task
+     */
+    public boolean deleteTask(String id) {
+        if (taskRepository.existsById(id)) {
+            return taskRepository.deleteById(id);
         }
         return false;
     }
 
-    public List<Task> searchTasks(Long userId, String searchTerm) {
-        return taskRepository.searchTasksByUserIdAndText(userId, searchTerm);
+    /**
+     * Delete all tasks for a board
+     */
+    public int deleteTasksByBoardId(String boardId) {
+        return taskRepository.deleteByBoardId(boardId);
     }
 
-    public TaskStats getTaskStats(Long userId) {
-        List<Task> allTasks = taskRepository.findByUserId(userId);
-        
-        long todoTasks = allTasks.stream().filter(t -> t.getStatus() == TaskStatus.TODO).count();
-        long inProgressTasks = allTasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_PROGRESS).count();
-        long inReviewTasks = allTasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_REVIEW).count();
-        long doneTasks = allTasks.stream().filter(t -> t.getStatus() == TaskStatus.DONE).count();
-        long totalTasks = allTasks.size();
-
-        return new TaskStats(totalTasks, todoTasks, inProgressTasks, inReviewTasks, doneTasks);
+    /**
+     * Check if task exists
+     */
+    public boolean taskExists(String id) {
+        return taskRepository.existsById(id);
     }
 
-    public static class TaskStats {
-        private final long totalTasks;
-        private final long todoTasks;
-        private final long inProgressTasks;
-        private final long inReviewTasks;
-        private final long doneTasks;
-
-        public TaskStats(long totalTasks, long todoTasks, long inProgressTasks, long inReviewTasks, long doneTasks) {
-            this.totalTasks = totalTasks;
-            this.todoTasks = todoTasks;
-            this.inProgressTasks = inProgressTasks;
-            this.inReviewTasks = inReviewTasks;
-            this.doneTasks = doneTasks;
-        }
-
-        public long getTotalTasks() { return totalTasks; }
-        public long getTodoTasks() { return todoTasks; }
-        public long getInProgressTasks() { return inProgressTasks; }
-        public long getInReviewTasks() { return inReviewTasks; }
-        public long getDoneTasks() { return doneTasks; }
+    /**
+     * Count tasks for a board
+     */
+    public long countTasksForBoard(String boardId) {
+        return taskRepository.countByBoardId(boardId);
     }
 }

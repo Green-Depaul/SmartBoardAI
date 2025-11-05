@@ -1,5 +1,9 @@
 import os
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Settings(BaseModel):
     app_host: str = os.getenv("APP_HOST", "0.0.0.0")
@@ -12,8 +16,14 @@ class Settings(BaseModel):
     java_api_key: str = os.getenv("JAVA_API_KEY", "")
     java_auth_bearer: str = os.getenv("JAVA_AUTH_BEARER", "")
 
-    together_api_key: str = os.getenv("TOGETHER_API_KEY", "")
+    together_api_key: str = os.getenv("TOGETHER_API_KEY", "").strip()
     together_base_url: str = os.getenv("TOGETHER_BASE_URL", "https://api.together.xyz/v1")
     together_model: str = os.getenv("TOGETHER_MODEL", "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo")
 
 settings = Settings()
+
+# Debug logging for API key
+if settings.together_api_key:
+    print(f"Together API key loaded: {settings.together_api_key[:10]}...")
+else:
+    print("WARNING: Together API key is empty!")

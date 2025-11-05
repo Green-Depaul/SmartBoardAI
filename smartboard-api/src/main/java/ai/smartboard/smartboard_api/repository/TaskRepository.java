@@ -1,54 +1,136 @@
 package ai.smartboard.smartboard_api.repository;
 
 import ai.smartboard.smartboard_api.model.Task;
-import ai.smartboard.smartboard_api.model.TaskStatus;
-import ai.smartboard.smartboard_api.model.TaskPriority;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import ai.smartboard.smartboard_api.model.Task.TaskStatus;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
+/**
+ * In-memory repository for Task entities
+ * Uses ConcurrentHashMap for thread-safety
+ * Can be replaced with JPA repository when database is added
+ */
 @Repository
-public interface TaskRepository extends JpaRepository<Task, Long> {
-    
-    // Find tasks by user
-    @Query("SELECT t FROM Task t WHERE t.user.id = :userId")
-    List<Task> findByUserId(@Param("userId") Long userId);
-    
-    // Find tasks by status
-    List<Task> findByStatus(TaskStatus status);
-    
-    // Find tasks by user and status
-    @Query("SELECT t FROM Task t WHERE t.user.id = :userId AND t.status = :status")
-    List<Task> findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") TaskStatus status);
-    
-    // Find tasks by priority
-    List<Task> findByPriority(TaskPriority priority);
-    
-    // Find tasks by user and priority
-    @Query("SELECT t FROM Task t WHERE t.user.id = :userId AND t.priority = :priority")
-    List<Task> findByUserIdAndPriority(@Param("userId") Long userId, @Param("priority") TaskPriority priority);
-    
-    // Search tasks by title or description
-    @Query("SELECT t FROM Task t WHERE t.user.id = :userId AND (LOWER(t.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
-    List<Task> searchTasksByUserIdAndText(@Param("userId") Long userId, @Param("searchTerm") String searchTerm);
-    
-    // Count tasks by user
-    @Query("SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId")
-    long countByUserId(@Param("userId") Long userId);
-    
-    // Count tasks by status for a user
-    @Query("SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.status = :status")
-    long countByUserIdAndStatus(@Param("userId") Long userId, @Param("status") TaskStatus status);
-    
-    // Find tasks by user ordered by creation date
-    @Query("SELECT t FROM Task t WHERE t.user.id = :userId ORDER BY t.createdAt DESC")
-    List<Task> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
-    
-    // Find tasks by user ordered by priority
-    @Query("SELECT t FROM Task t WHERE t.user.id = :userId ORDER BY t.priority DESC")
-    List<Task> findByUserIdOrderByPriorityDesc(@Param("userId") Long userId);
+public class TaskRepository {
+
+    private final Map<String, Task> tasks = new ConcurrentHashMap<>();
+
+    /**
+     * Find all tasks
+     */
+    public List<Task> findAll() {
+        return new ArrayList<>(tasks.values());
+    }
+
+    /**
+     * Find task by ID
+     */
+    public Optional<Task> findById(String id) {
+        return Optional.ofNullable(tasks.get(id));
+    }
+
+    /**
+     * Find tasks by board ID
+     */
+    public List<Task> findByBoardId(String boardId) {
+        return tasks.values().stream()
+                .filter(task -> task.getBoardId() != null && task.getBoardId().equals(boardId))
+                .sorted(Comparator.comparingInt(Task::getOrder))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Find tasks by status
+     */
+    public List<Task> findByStatus(TaskStatus status) {
+        return tasks.values().stream()
+                .filter(task -> task.getStatus() == status)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Find tasks by board ID and status
+     */
+    public List<Task> findByBoardIdAndStatus(String boardId, TaskStatus status) {
+        return tasks.values().stream()
+                .filter(task -> task.getBoardId() != null &&
+                               task.getBoardId().equals(boardId) &&
+                               task.getStatus() == status)
+                .sorted(Comparator.comparingInt(Task::getOrder))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Find tasks assigned to a user
+     */
+    public List<Task> findByAssignedTo(String userId) {
+        return tasks.values().stream()
+                .filter(task -> task.getAssignedTo() != null && task.getAssignedTo().equals(userId))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Save or update a task
+     */
+    public Task save(Task task) {
+        if (task.getId() == null || task.getId().isEmpty()) {
+            task.setId(UUID.randomUUID().toString());
+        }
+        task.touch();
+        tasks.put(task.getId(), task);
+        return task;
+    }
+
+    /**
+     * Delete a task by ID
+     */
+    public boolean deleteById(String id) {
+        return tasks.remove(id) != null;
+    }
+
+    /**
+     * Delete all tasks by board ID
+     */
+    public int deleteByBoardId(String boardId) {
+        List<String> tasksToDelete = tasks.values().stream()
+                .filter(task -> task.getBoardId() != null && task.getBoardId().equals(boardId))
+                .map(Task::getId)
+                .collect(Collectors.toList());
+
+        tasksToDelete.forEach(tasks::remove);
+        return tasksToDelete.size();
+    }
+
+    /**
+     * Check if task exists
+     */
+    public boolean existsById(String id) {
+        return tasks.containsKey(id);
+    }
+
+    /**
+     * Count all tasks
+     */
+    public long count() {
+        return tasks.size();
+    }
+
+    /**
+     * Count tasks by board ID
+     */
+    public long countByBoardId(String boardId) {
+        return tasks.values().stream()
+                .filter(task -> task.getBoardId() != null && task.getBoardId().equals(boardId))
+                .count();
+    }
+
+    /**
+     * Delete all tasks (useful for testing)
+     */
+    public void deleteAll() {
+        tasks.clear();
+    }
 }

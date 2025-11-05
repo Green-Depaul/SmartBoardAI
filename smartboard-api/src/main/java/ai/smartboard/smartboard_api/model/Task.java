@@ -1,130 +1,123 @@
 package ai.smartboard.smartboard_api.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
-import java.sql.Timestamp;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "tasks")
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/**
+ * Represents a Task (card) on a Kanban Board
+ * Compatible with frontend expectations
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Task {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @Column(name = "title", nullable = false)
+    private String id;
+    private String boardId; // Which board this task belongs to
     private String title;
-
-    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
+    private TaskStatus status; // todo, in_progress, done
+    private TaskPriority priority; // low, medium, high
+    private String assignedTo; // User ID of assignee
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime dueDate;
+    private int order; // For ordering tasks within a status column
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private TaskStatus status = TaskStatus.TODO;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "priority")
-    private TaskPriority priority = TaskPriority.MEDIUM;
-
-    @Column(name = "estimated_hours")
-    private Integer estimatedHours;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private User user;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Timestamp createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private Timestamp updatedAt;
-
-    // Constructors
-    public Task() {}
-
-    public Task(String title, String description, User user) {
+    /**
+     * Constructor for creating a new task
+     */
+    public Task(String title, String description, TaskStatus status, TaskPriority priority) {
+        this.id = UUID.randomUUID().toString();
         this.title = title;
         this.description = description;
-        this.user = user;
-        this.createdAt = new Timestamp(System.currentTimeMillis());
-        this.updatedAt = new Timestamp(System.currentTimeMillis());
+        this.status = status != null ? status : TaskStatus.TODO;
+        this.priority = priority != null ? priority : TaskPriority.MEDIUM;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        this.order = 0;
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    /**
+     * Simplified constructor
+     */
+    public Task(String title, String description) {
+        this(title, description, TaskStatus.TODO, TaskPriority.MEDIUM);
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    /**
+     * Update the task's timestamp
+     */
+    public void touch() {
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public String getTitle() {
-        return title;
+    /**
+     * Move task to a different status
+     */
+    public void moveToStatus(TaskStatus newStatus) {
+        this.status = newStatus;
+        this.touch();
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    /**
+     * Enum for task status (Kanban columns)
+     */
+    public enum TaskStatus {
+        TODO("todo"),
+        IN_PROGRESS("in_progress"),
+        DONE("done");
+
+        private final String value;
+
+        TaskStatus(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static TaskStatus fromString(String value) {
+            for (TaskStatus status : TaskStatus.values()) {
+                if (status.value.equalsIgnoreCase(value) || status.name().equalsIgnoreCase(value)) {
+                    return status;
+                }
+            }
+            return TODO; // Default
+        }
     }
 
-    public String getDescription() {
-        return description;
-    }
+    /**
+     * Enum for task priority
+     */
+    public enum TaskPriority {
+        LOW("low"),
+        MEDIUM("medium"),
+        HIGH("high"),
+        URGENT("urgent");
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+        private final String value;
 
-    public TaskStatus getStatus() {
-        return status;
-    }
+        TaskPriority(String value) {
+            this.value = value;
+        }
 
-    public void setStatus(TaskStatus status) {
-        this.status = status;
-    }
+        public String getValue() {
+            return value;
+        }
 
-    public TaskPriority getPriority() {
-        return priority;
-    }
-
-    public void setPriority(TaskPriority priority) {
-        this.priority = priority;
-    }
-
-    public Integer getEstimatedHours() {
-        return estimatedHours;
-    }
-
-    public void setEstimatedHours(Integer estimatedHours) {
-        this.estimatedHours = estimatedHours;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Timestamp getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Timestamp updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = new Timestamp(System.currentTimeMillis());
+        public static TaskPriority fromString(String value) {
+            for (TaskPriority priority : TaskPriority.values()) {
+                if (priority.value.equalsIgnoreCase(value) || priority.name().equalsIgnoreCase(value)) {
+                    return priority;
+                }
+            }
+            return MEDIUM; // Default
+        }
     }
 }
