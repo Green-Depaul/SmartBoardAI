@@ -1,119 +1,244 @@
 # SmartBoardAI
 
-A full-stack project planning assistant that turns ideas into actionable tasks. The app combines:
+An intelligent project planning assistant that transforms ideas into actionable tasks through AI-powered collaboration. SmartBoard AI combines a modern React frontend, robust Java backend, and AI-powered services to deliver seamless project management with smart task generation.
 
-- Frontend: Vite + React + TypeScript UI for landing/login/signup, AI chat, and Kanban board
-- Backend (Java/Spring Boot): MVC API, domain, persistence, and auth
-- Python AI Adapter (FastAPI): Calls AI providers (Together.ai) and integrates with Java for context and logging
+## ✨ Features
 
+- **🎯 Smart Task Management**: Create, edit, delete, and organize tasks with intuitive Kanban board
+- **🤖 AI-Powered Planning**: Generate project tasks and get intelligent suggestions through AI chat
+- **🔐 Secure Authentication**: Complete user authentication with login, signup, and logout
+- **📱 Responsive Design**: Works seamlessly on desktop and mobile devices
+- **⚡ Real-time Updates**: Live task updates across the board interface
+- **🎨 Modern UI**: Clean, intuitive interface built with React and TypeScript
 
-## Architecture
+## 🏗️ Architecture
 
-High-level flow:
+### **Three-Tier Microservices Architecture:**
 
-1) User interacts with the React app (chat to describe projects, view/manage Kanban tasks)
-2) Frontend calls Java MVC endpoints under `/api/*`
-3) Java fetches domain context (users/projects), applies business logic, and calls the Python AI adapter for LLM tasks
-4) Python AI adapter talks to Together.ai (or other providers), returns structured results to Java
-5) Java maps AI outputs to domain models (Tasks, Steps) and persists as needed
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  React Frontend │────│ Java Backend    │────│ Python AI       │
+│  (Port 3000)    │    │ (Port 8080)     │    │ Service         │
+│                 │    │                 │    │ (Port 8000)     │
+│ • Kanban Board  │    │ • REST API      │    │ • AI Chat       │
+│ • AI Chat UI    │    │ • Authentication│    │ • Task Gen      │
+│ • User Auth     │    │ • Task CRUD     │    │ • Planning      │
+│                 │    │ • H2 Database   │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
 
-Key benefits:
-- Secrets stay on the server
-- One place to rate-limit, retry, and log AI calls
-- Clear contracts between layers for easier testing and iteration
+### **Data Flow:**
+1. **User Interface**: React app provides intuitive Kanban board and AI chat interface
+2. **API Gateway**: Java Spring Boot handles authentication, task CRUD, and business logic
+3. **AI Integration**: Python FastAPI service processes AI requests and generates intelligent responses
+4. **Data Persistence**: H2 in-memory database with automatic seeding for development
 
-
-## Repos and folders
-
-- `smartboardai-frontend/` — React + Vite app
-- `smartboard-api/` — Spring Boot MVC backend
-- `smartboardai-python/` — FastAPI AI adapter (Together.ai integration)
-
-
-## Getting started
-
-Prereqs:
-- Node.js 18+ and npm
-- Java 17+ and Maven
-- Python 3.11+ (or 3.12) and pip
-
-Environment variables (recommended via shell or `.env`):
-
-- For Python (AI adapter):
-	- `TOGETHER_API_KEY` — Together.ai API key
-	- `TOGETHER_MODEL` — e.g. `meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo`
-	- `JAVA_BASE_URL` — default `http://localhost:8080` (Java backend URL)
-	- `CORS_ORIGINS` — dev: `http://localhost:3000`
-
-- For Java (backend):
-	- Any DB creds or feature flags as needed later
-
-Ports used (dev):
-- Frontend: 3000 (Vite)
-- Java backend: 8080 (Spring Boot)
-- Python AI adapter: 8081 (FastAPI default in this project)
+### **Technology Stack:**
+- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
+- **Backend**: Spring Boot 3 + Java 17 + Spring Security + H2 Database
+- **AI Service**: Python 3.8+ + FastAPI + AI Integration
+- **Build Tools**: Maven (Java), npm (React), pip (Python)
 
 
-### Run the frontend
+## 🚀 Quick Start
 
-In `smartboardai-frontend/`:
+### **Prerequisites**
+- **Java 17+** (for Spring Boot backend)
+- **Python 3.8+** (for AI service)  
+- **Node.js 16+** & npm (for React frontend)
+- **Git** (for version control)
 
+### **One-Command Setup**
 ```bash
+# Clone the repository
+git clone https://github.com/Green-Depaul/SmartBoardAI.git
+cd SmartBoardAI
+
+# Setup all dependencies
+./setup.sh
+
+# Start all services
+./start-all.sh
+```
+
+**🌐 Access the application at: http://localhost:3000**
+
+### **Alternative: Manual Setup**
+
+<details>
+<summary>Click to expand manual setup instructions</summary>
+
+#### 1. Java Backend
+```bash
+cd smartboard-api
+./mvnw clean compile
+./mvnw spring-boot:run
+# Runs on http://localhost:8080
+```
+
+#### 2. Python AI Service
+```bash
+cd smartboardai-python
+python3 -m venv ai_venv
+source ai_venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+# Runs on http://localhost:8000
+```
+
+#### 3. React Frontend
+```bash
+cd smartboardai-frontend
 npm install
 npm run dev
+# Runs on http://localhost:3000
+```
+</details>
+
+## 📋 Available Scripts
+
+| Script | Description | Port | Usage |
+|--------|-------------|------|-------|
+| `./setup.sh` | Install all dependencies | - | Run once initially |
+| `./start-all.sh` | Start all services | 3000, 8080, 8000 | Main startup script |
+| `./stop-all.sh` | Stop all services | - | Cleanup script |
+| `./start-backend.sh` | Java backend only | 8080 | Backend development |
+| `./start-ai-service.sh` | Python AI service only | 8000 | AI development |
+| `./start-frontend.sh` | React frontend only | 3000 | Frontend development |
+
+## 🌐 Service Endpoints
+
+| Service | URL | Health Check | Description |
+|---------|-----|--------------|-------------|
+| **Frontend** | http://localhost:3000 | http://localhost:3000 | React UI (main interface) |
+| **Java Backend** | http://localhost:8080 | http://localhost:8080/actuator/health | REST API & Database |
+| **Python AI** | http://localhost:8000 | http://localhost:8000/api/health | AI Chat & Task Generation |
+
+## 📁 Project Structure
+
+```
+SmartBoardAI/
+├── smartboard-api/           # Java Spring Boot Backend (Port 8080)
+│   ├── src/main/java/        # Java source code
+│   ├── src/main/resources/   # Configuration files
+│   ├── pom.xml              # Maven dependencies
+│   └── mvnw                 # Maven wrapper
+├── smartboardai-python/      # Python AI Service (Port 8000)
+│   ├── app/                 # Python application code
+│   ├── requirements.txt     # Python dependencies
+│   └── ai_venv/            # Virtual environment (auto-created)
+├── smartboardai-frontend/    # React Frontend (Port 3000)
+│   ├── src/                 # React source code
+│   ├── package.json         # Node.js dependencies
+│   └── vite.config.ts      # Vite configuration
+├── logs/                    # Service logs (auto-created)
+├── DEPLOYMENT_GUIDE.md      # Comprehensive deployment documentation
+└── *.sh                     # Automated deployment scripts
 ```
 
-Open http://localhost:3000
 
+## 🔐 Authentication & Demo
 
-### Run the Java backend
+### **Development Login**
+The application includes pre-seeded demo users for immediate testing:
 
-In `smartboard-api/`:
+- **Email**: `demo@smartboard.ai`
+- **Password**: `demo1234`
 
+### **Database Access (Development)**
+- **H2 Console**: http://localhost:8080/h2-console
+- **JDBC URL**: `jdbc:h2:mem:smartboard`
+- **Username**: `sa`
+- **Password**: *(empty)*
+
+### **Features Available**
+- ✅ **User Registration & Login**
+- ✅ **Task Creation, Editing & Deletion**
+- ✅ **Kanban Board with Drag-and-Drop**
+- ✅ **AI-Powered Task Generation**
+- ✅ **Project Planning Chat Interface**
+- ✅ **Real-time Task Updates**
+
+## 🛠️ Development Workflow
+
+### **Full-Stack Development**
 ```bash
-./mvnw spring-boot:run
+./start-all.sh    # Start all services
+# Develop in your IDE
+./stop-all.sh     # Stop when done
 ```
 
-The server starts at http://localhost:8080
-
-
-### Run the Python AI adapter
-
-In `smartboardai-python/`:
-
+### **Individual Service Development**
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+# Backend only
+./start-backend.sh
 
-export TOGETHER_API_KEY=sk-...
-export JAVA_BASE_URL=http://localhost:8080
-export CORS_ORIGINS=http://localhost:3000
+# AI service only  
+./start-ai-service.sh
 
-uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
+# Frontend only (requires backend)
+./start-backend.sh && ./start-frontend.sh
 ```
 
-The adapter serves http://localhost:8081
+### **Monitoring & Debugging**
+```bash
+# View logs in real-time
+tail -f logs/*.log
 
+# Check service health
+curl http://localhost:8080/actuator/health  # Backend
+curl http://localhost:8000/api/health       # AI Service
+curl http://localhost:3000                  # Frontend
+```
 
-## Demo login (dev)
+## 🚨 Troubleshooting
 
-For quick verification in development, a demo user is seeded automatically on backend startup.
+### **Common Issues**
 
-- Frontend (Vite): http://localhost:3000
-- Backend (Spring Boot): http://localhost:8080
-- H2 Console: http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:smartboard`, user: `sa`, password: empty)
-- Health check via proxy: http://localhost:3000/api/users/health
+**Permission Denied on Scripts:**
+```bash
+chmod +x *.sh
+```
 
-Demo credentials:
+**Port Already in Use:**
+```bash
+./stop-all.sh  # Or manually:
+lsof -ti:3000 | xargs kill -9  # Frontend
+lsof -ti:8000 | xargs kill -9  # AI Service  
+lsof -ti:8080 | xargs kill -9  # Backend
+```
 
-- Email: `demo@smartboard.ai`
-- Password: `demo1234`
+**Java Issues:**
+- Ensure Java 17+ is installed: `java -version`
+- Check JAVA_HOME environment variable
 
-Notes:
+**Python Issues:**
+- Ensure Python 3.8+ is installed: `python3 --version`
+- Delete `ai_venv` folder and re-run setup if needed
 
-- The frontend dev server proxies API calls to the backend. Requests to `/api/*` are forwarded to the Spring app with the `/api` prefix stripped (e.g., `/api/users/login` → `/users/login`).
-- The `users` table is created automatically in the in-memory H2 database (`spring.jpa.hibernate.ddl-auto=update`). The demo user is inserted on startup if it doesn't already exist.
+**Node.js Issues:**
+- Ensure Node.js 16+ is installed: `node --version`
+- Clear cache: `npm cache clean --force`
+- Delete `node_modules` and re-run setup
+
+## 📖 Documentation
+
+- **📋 [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Comprehensive setup and deployment guide
+- **🔧 [API Documentation](./smartboard-api/KANBAN_API_DOCUMENTATION.md)** - Backend API reference
+- **🔒 [Security Documentation](./SECURITY.md)** - Security guidelines and best practices
+
+## 🤝 Contributing
+
+This project is ready for development and deployment. Key areas for contribution:
+- Feature enhancements to the Kanban board
+- AI model improvements and integrations  
+- UI/UX design improvements
+- Performance optimizations
+- Additional authentication providers
+
+## 📝 License
+
+Academic/Capstone project - DePaul University CSC 394
 
 
 ## API contracts (proposed)
