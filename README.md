@@ -96,6 +96,26 @@ uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
 The adapter serves http://localhost:8081
 
 
+## Demo login (dev)
+
+For quick verification in development, a demo user is seeded automatically on backend startup.
+
+- Frontend (Vite): http://localhost:3000
+- Backend (Spring Boot): http://localhost:8080
+- H2 Console: http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:smartboard`, user: `sa`, password: empty)
+- Health check via proxy: http://localhost:3000/api/users/health
+
+Demo credentials:
+
+- Email: `demo@smartboard.ai`
+- Password: `demo1234`
+
+Notes:
+
+- The frontend dev server proxies API calls to the backend. Requests to `/api/*` are forwarded to the Spring app with the `/api` prefix stripped (e.g., `/api/users/login` → `/users/login`).
+- The `users` table is created automatically in the in-memory H2 database (`spring.jpa.hibernate.ddl-auto=update`). The demo user is inserted on startup if it doesn't already exist.
+
+
 ## API contracts (proposed)
 
 Frontend → Java (public):

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
+import { MaterialIcon } from "./material-icon";
 
 import { cn } from "./utils";
 
@@ -20,14 +20,16 @@ function DropdownMenuPortal({
   );
 }
 
-function DropdownMenuTrigger({
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+function DropdownMenuTrigger({ children, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+  // When a child element is provided we want the Radix trigger to render
+  // the child element instead of rendering an extra <button> around it.
+  // That avoids nested <button> elements and ensures the forwarded ref
+  // attaches to the actual DOM node (the child), which is required by
+  // many primitives (popper, focus management, etc.).
   return (
-    <DropdownMenuPrimitive.Trigger
-      data-slot="dropdown-menu-trigger"
-      {...props}
-    />
+    <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" asChild>
+      {children as React.ReactElement}
+    </DropdownMenuPrimitive.Trigger>
   );
 }
 
@@ -100,7 +102,7 @@ function DropdownMenuCheckboxItem({
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
         <DropdownMenuPrimitive.ItemIndicator>
-          <CheckIcon className="size-4" />
+          <MaterialIcon name="check" size="small" style={{ color: 'var(--color-icon-primary)' }} />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
@@ -135,7 +137,7 @@ function DropdownMenuRadioItem({
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
         <DropdownMenuPrimitive.ItemIndicator>
-          <CircleIcon className="size-2 fill-current" />
+          <MaterialIcon name="radio_button_checked" size={8} style={{ color: 'var(--color-icon-primary)' }} />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
@@ -217,7 +219,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <ChevronRightIcon className="ml-auto size-4" />
+      <MaterialIcon name="chevron_right" size="small" className="ml-auto" style={{ color: 'var(--color-icon-secondary)' }} />
     </DropdownMenuPrimitive.SubTrigger>
   );
 }

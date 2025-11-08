@@ -70,6 +70,7 @@ public class Task {
     public enum TaskStatus {
         TODO("todo"),
         IN_PROGRESS("in_progress"),
+        IN_REVIEW("in_review"),
         DONE("done");
 
         private final String value;
@@ -82,6 +83,7 @@ public class Task {
             return value;
         }
 
+        @com.fasterxml.jackson.annotation.JsonCreator
         public static TaskStatus fromString(String value) {
             for (TaskStatus status : TaskStatus.values()) {
                 if (status.value.equalsIgnoreCase(value) || status.name().equalsIgnoreCase(value)) {
@@ -111,6 +113,7 @@ public class Task {
             return value;
         }
 
+        @com.fasterxml.jackson.annotation.JsonCreator
         public static TaskPriority fromString(String value) {
             for (TaskPriority priority : TaskPriority.values()) {
                 if (priority.value.equalsIgnoreCase(value) || priority.name().equalsIgnoreCase(value)) {

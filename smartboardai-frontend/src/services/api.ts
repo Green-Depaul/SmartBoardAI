@@ -31,23 +31,29 @@ export interface SignupResponse {
 }
 
 export interface TaskSuggestion {
+  id: string;
   title: string;
   description: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  estimatedHours: number;
-  category: string;
+  priority: string;
+  estimated_hours?: number;
+  category?: string;
+  dependencies: string[];
 }
 
 export interface Task {
-  id: number;
+  id: string;
   title: string;
-  description: string;
+  description: string | null;
   status: 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   estimatedHours: number;
-  userId: number;
-  createdAt: string;
+  userId?: number;
+  createdAt: string | null;
   updatedAt: string;
+  boardId?: string | null;
+  assignedTo?: string | null;
+  dueDate?: string | null;
+  order?: number;
 }
 
 export interface TaskStats {
@@ -59,14 +65,21 @@ export interface TaskStats {
 }
 
 export interface AIResponse {
-  message: string;
-  suggestedTasks: TaskSuggestion[];
-  plan: string;
+  success: boolean;
+  tasks: TaskSuggestion[];
+  total_estimated_hours?: number;
+  project_summary?: string;
+  recommendations?: string[];
+  error_message?: string;
+  request_id?: string;
 }
+
+// Backend base URL - use relative URLs in development to leverage Vite proxy
+const API_BASE_URL = window.location.hostname === 'localhost' ? '/api' : 'http://localhost:8080/api';
 
 // Base request function
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `/api${endpoint}`;
+  const url = `${API_BASE_URL}${endpoint}`;
   
   const config: RequestInit = {
     headers: {
@@ -81,6 +94,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`API Error: ${response.status} - ${errorText}`);
+  }
+
+  // Handle 204 No Content responses (e.g., DELETE operations)
+  if (response.status === 204) {
+    return {} as T;
   }
 
   return response.json();
@@ -109,24 +127,22 @@ export const api = {
   generatePlan: (message: string) =>
     request<AIResponse>(`/ai/generate-plan`, {
       method: "POST",
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message: message }),
     }),
 
-  // Task Services
-  getTasks: (userId: number) =>
-    request<Task[]>(`/tasks/user/${userId}`),
+  // Task Services (aligned with backend /board/items and TaskController)
+  // Note: current backend returns all tasks; user scoping can be added later.
+  getTasks: (_userId: number) => request<Task[]>(`/board/items`),
 
-  getTasksByStatus: (userId: number, status: string) =>
-    request<Task[]>(`/tasks/user/${userId}/status/${status}`),
+  getTasksByStatus: (_userId: number, status: string) =>
+    request<Task[]>(`/board/items?status=${encodeURIComponent(status)}`),
 
   createTask: (payload: {
-    userId: number;
     title: string;
-    description: string;
-    priority: string;
-    estimatedHours: number;
+    description?: string;
+    priority?: string;
   }) =>
-    request<Task>(`/tasks`, {
+    request<Task>(`/board/items`, {
       method: "POST",
       body: JSON.stringify(payload),
     }),
@@ -135,24 +151,41 @@ export const api = {
     userId: number;
     suggestion: TaskSuggestion;
   }) =>
-    request<Task>(`/tasks/from-suggestion`, {
+    request<Task>(`/board/items`, {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        title: payload.suggestion.title,
+        description: payload.suggestion.description,
+        priority: payload.suggestion.priority,
+      }),
     }),
 
-  updateTaskStatus: (taskId: number, status: string) =>
-    request<Task>(`/tasks/${taskId}/status`, {
-      method: "PUT",
+  updateTaskStatus: (taskId: string, status: string) =>
+    request<Task>(`/board/items/${taskId}/status`, {
+      method: "PATCH",
       body: JSON.stringify({ status }),
     }),
 
-  deleteTask: (taskId: number) =>
-    request<{ message: string }>(`/tasks/${taskId}`, {
+  // Update full task (partial fields allowed) - backend supports PUT /board/items/{id}
+  updateTask: (taskId: string, payload: Partial<Task>) =>
+    request<Task>(`/board/items/${taskId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteTask: (taskId: string) =>
+    request<{ message: string }>(`/board/items/${taskId}`, {
       method: "DELETE",
     }),
 
-  getTaskStats: (userId: number) =>
-    request<TaskStats>(`/tasks/user/${userId}/stats`),
+  getTaskStats: (_userId: number) =>
+    Promise.resolve({
+      totalTasks: 0,
+      todoTasks: 0,
+      inProgressTasks: 0,
+      inReviewTasks: 0,
+      doneTasks: 0,
+    } as TaskStats),
 
   // Health checks
   health: () =>

@@ -3,40 +3,76 @@ package ai.smartboard.smartboard_api.model;
 import java.util.List;
 
 public class AIResponse {
-    private String message;
-    private List<TaskSuggestion> suggestedTasks;
-    private String plan;
+    private boolean success;
+    private List<TaskSuggestion> tasks;
+    private Integer totalEstimatedHours;
+    private String projectSummary;
+    private List<String> recommendations;
+    private String errorMessage;
+    private String requestId;
 
     public AIResponse() {}
 
-    public AIResponse(String message, List<TaskSuggestion> suggestedTasks, String plan) {
-        this.message = message;
-        this.suggestedTasks = suggestedTasks;
-        this.plan = plan;
+    public AIResponse(boolean success, List<TaskSuggestion> tasks, String projectSummary) {
+        this.success = success;
+        this.tasks = tasks;
+        this.projectSummary = projectSummary;
     }
 
-    public String getMessage() {
-        return message;
+    public boolean isSuccess() {
+        return success;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setSuccess(boolean success) {
+        this.success = success;
     }
 
-    public List<TaskSuggestion> getSuggestedTasks() {
-        return suggestedTasks;
+    public List<TaskSuggestion> getTasks() {
+        return tasks;
     }
 
-    public void setSuggestedTasks(List<TaskSuggestion> suggestedTasks) {
-        this.suggestedTasks = suggestedTasks;
+    public void setTasks(List<TaskSuggestion> tasks) {
+        this.tasks = tasks;
     }
 
-    public String getPlan() {
-        return plan;
+    public Integer getTotalEstimatedHours() {
+        return totalEstimatedHours;
     }
 
-    public void setPlan(String plan) {
-        this.plan = plan;
+    public void setTotalEstimatedHours(Integer totalEstimatedHours) {
+        this.totalEstimatedHours = totalEstimatedHours;
+    }
+
+    public String getProjectSummary() {
+        return projectSummary;
+    }
+
+    public void setProjectSummary(String projectSummary) {
+        this.projectSummary = projectSummary;
+    }
+
+    public List<String> getRecommendations() {
+        return recommendations;
+    }
+
+    public void setRecommendations(List<String> recommendations) {
+        this.recommendations = recommendations;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 
     public static class TaskSuggestion {

@@ -16,7 +16,7 @@ import java.util.List;
  * Compatible with frontend expectations
  */
 @RestController
-@RequestMapping("/api/board")
+@RequestMapping("/board")
 @CrossOrigin(origins = "*") // Configure appropriately for production
 public class BoardController {
     

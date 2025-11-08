@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Command as CommandPrimitive } from "cmdk@1.1.1";
-import { SearchIcon } from "lucide-react";
+import { Command as CommandPrimitive } from "cmdk";
+import { MaterialIcon } from "./material-icon";
 
 import { cn } from "./utils";
 import {
@@ -62,7 +62,7 @@ function CommandInput({
       data-slot="command-input-wrapper"
       className="flex h-9 items-center gap-2 border-b px-3"
     >
-      <SearchIcon className="size-4 shrink-0 opacity-50" />
+      <MaterialIcon name="search" size="small" className="shrink-0 opacity-50" style={{ color: 'var(--color-icon-secondary)' }} />
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(

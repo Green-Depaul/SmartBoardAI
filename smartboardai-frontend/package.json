@@ -34,12 +34,11 @@
             "cmdk": "^1.1.1",
             "embla-carousel-react": "^8.6.0",
             "input-otp": "^1.4.2",
-            "lucide-react": "^0.487.0",
             "next-themes": "^0.4.6",
             "react": "^18.3.1",
             "react-day-picker": "^8.10.1",
-            "react-dnd": "*",
-            "react-dnd-html5-backend": "*",
+            "react-dnd": "^16.0.1",
+            "react-dnd-html5-backend": "^16.0.1",
             "react-dom": "^18.3.1",
             "react-hook-form": "^7.55.0",
             "react-resizable-panels": "^2.1.7",
@@ -50,11 +49,19 @@
       },
       "devDependencies": {
             "@types/node": "^20.10.0",
+            "@types/react": "^18.2.74",
+            "@types/react-dom": "^18.2.24",
             "@vitejs/plugin-react-swc": "^3.10.2",
+            "concurrently": "^8.2.2",
             "vite": "6.3.5"
       },
       "scripts": {
             "dev": "vite",
-            "build": "vite build"
+            "build": "vite build",
+            "dev:frontend": "vite",
+            "dev:backend": "cd ../smartboard-api && ./mvnw spring-boot:run",
+            "dev:python": "cd ../smartboardai-python && python -m uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload",
+            "dev:all": "concurrently -n backend,python,web -c green,yellow,blue \"npm run dev:backend\" \"npm run dev:python\" \"npm run dev:frontend\"",
+            "setup:python": "cd ../smartboardai-python && python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt"
       }
 }

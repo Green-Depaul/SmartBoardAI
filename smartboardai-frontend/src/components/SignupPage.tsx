@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { ArrowLeft } from "lucide-react";
+
 import { api, type User } from "../services/api";
 
 interface SignupPageProps {
@@ -55,35 +55,70 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div 
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ backgroundColor: 'var(--color-background)' }}
+    >
       <div className="w-full max-w-md">
         {/* Back button */}
         <Button 
           variant="ghost" 
           onClick={onNavigateBack}
           className="mb-8 p-0 h-auto"
+          style={{ color: 'var(--color-text-secondary)' }}
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <span 
+            className="text-sm mr-2"
+            style={{ color: 'var(--color-icon-primary)' }}
+          >
+            ←
+          </span>
           Back to Home
         </Button>
 
-        <Card className="border shadow-lg">
+        <Card 
+          className="shadow-lg"
+          style={{ 
+            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-background-card)'
+          }}
+        >
           <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl mb-2">Smart Board AI</CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <CardTitle 
+              className="text-2xl mb-2"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              SmartBoardAI
+            </CardTitle>
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
               Create your account to get started.
             </p>
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm">{error}</p>
+              <div 
+                className="mb-4 p-3 rounded-lg"
+                style={{ 
+                  backgroundColor: 'var(--color-error-bg)',
+                  border: '1px solid var(--color-error-border)',
+                  color: 'var(--color-error-text)'
+                }}
+              >
+                <p className="text-sm">{error}</p>
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label 
+                    htmlFor="firstName"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    First Name
+                  </Label>
                   <Input
                     id="firstName"
                     type="text"
@@ -91,11 +126,20 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     required
-                    className="bg-input-background"
+                    style={{ 
+                      backgroundColor: 'var(--color-background-input)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text-primary)'
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label 
+                    htmlFor="lastName"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    Last Name
+                  </Label>
                   <Input
                     id="lastName"
                     type="text"
@@ -103,13 +147,22 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     required
-                    className="bg-input-background"
+                    style={{ 
+                      backgroundColor: 'var(--color-background-input)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text-primary)'
+                    }}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label 
+                  htmlFor="email"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -117,12 +170,21 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-input-background"
+                  style={{ 
+                    backgroundColor: 'var(--color-background-input)',
+                    border: '1px solid var(--color-border)',
+                    color: 'var(--color-text-primary)'
+                  }}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label 
+                  htmlFor="password"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Password
+                </Label>
                 <Input
                   id="password"
                   type="password"
@@ -130,12 +192,21 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-input-background"
+                  style={{ 
+                    backgroundColor: 'var(--color-background-input)',
+                    border: '1px solid var(--color-border)',
+                    color: 'var(--color-text-primary)'
+                  }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label 
+                  htmlFor="confirmPassword"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Confirm Password
+                </Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -143,7 +214,11 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="bg-input-background"
+                  style={{ 
+                    backgroundColor: 'var(--color-background-input)',
+                    border: '1px solid var(--color-border)',
+                    color: 'var(--color-text-primary)'
+                  }}
                 />
               </div>
 
@@ -158,11 +233,19 @@ export function SignupPage({ onNavigateBack, onNavigateToLogin, onNavigateToChat
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
+              <p 
+                className="text-sm"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
                 Already have an account?{" "}
                 <button
                   onClick={onNavigateToLogin}
-                  className="text-primary hover:underline"
+                  style={{ 
+                    color: 'var(--color-primary)',
+                    textDecoration: 'none'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                  onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                 >
                   Log In
                 </button>

@@ -3,8 +3,8 @@
 import * as React from "react";
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
-} from "embla-carousel-react@8.6.0";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+} from "embla-carousel-react";
+import { MaterialIcon } from "./material-icon";
 
 import { cn } from "./utils";
 import { Button } from "./button";
@@ -195,7 +195,7 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <ArrowLeft />
+      <MaterialIcon name="arrow_back" size="small" style={{ color: 'var(--color-icon-primary)' }} />
       <span className="sr-only">Previous slide</span>
     </Button>
   );
@@ -225,7 +225,7 @@ function CarouselNext({
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight />
+      <MaterialIcon name="arrow_forward" size="small" style={{ color: 'var(--color-icon-primary)' }} />
       <span className="sr-only">Next slide</span>
     </Button>
   );

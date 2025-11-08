@@ -1,0 +1,162 @@
+/* SmartBoard AI Custom Theme - Tailwind Compatible */
+
+/* Import Inter font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Code+Pro:wght@400&display=swap');
+
+:root {
+  /* === Brand Colors === */
+  --color-primary: #1E4A7B;      /* Deep Navy Blue — main brand color */
+  --color-secondary: #4A90E2;    /* Medium Blue — accent and highlights */
+  --color-accent: #F2A541;       /* Warm Orange — call-to-action buttons, notifications */
+  --color-success: #22C55E;      /* Green — success states, positive feedback */
+  --color-warning: #F59E0B;      /* Amber — warnings, pending states */
+  --color-error: #EF4444;        /* Red — errors, critical alerts */
+  --color-info: #3B82F6;         /* Blue — informational messages */
+
+  /* === Icon Colors === */
+  --color-icon-primary: #1E4A7B;    /* Same as Primary — used for active icons, navigation, brand actions */
+  --color-icon-secondary: #4A5568;  /* Same as Text-Secondary — used for default/static icons */
+  --color-icon-tertiary: #9BA7B4;   /* Soft gray tint — used for disabled or background icons */
+  --color-icon-on-light: #1E293B;   /* When placed over white or very light surfaces */
+  --color-icon-on-dark: #FFFFFF;    /* When placed over darker blue backgrounds (e.g., footer, header) */
+  --color-icon-accent: #F2A541;     /* Optional highlight for notification or decorative icons */
+
+  /* === Text Colors === */
+  --color-text: #1E293B;         /* Primary text color */
+  --color-text-muted: #4A5568;   /* Secondary text, subtitles */
+  --color-text-light: #9BA7B4;   /* Disabled text, placeholders */
+
+  /* === Background Colors === */
+  --color-background: #F8FAFC;   /* Main page background */
+  --color-surface: #FFFFFF;      /* Cards, modals, elevated surfaces */
+  --color-surface-hover: #F1F5F9; /* Hover states for interactive surfaces */
+
+  /* === Border Colors === */
+  --color-border: #E2E8F0;       /* Default borders, dividers */
+  --color-border-focus: #4A90E2; /* Focused input borders */
+
+  /* === Error State Colors === */
+  --color-error-bg: #FEF2F2;
+  --color-error-border: #FECACA;
+  --color-error-text: #B91C1C;
+
+  /* === Additional UI Colors === */
+  --color-text-primary: #1E293B;     /* Primary text */
+  --color-text-secondary: #4A5568;   /* Secondary text */
+  --color-background-card: #FFFFFF;  /* Card backgrounds */
+  --color-background-input: #FFFFFF; /* Input field backgrounds */
+
+  /* Text Colors - Updated with proper contrast values */
+  --color-text-primary: #1E293B;    /* Always passes on white/light backgrounds */
+  --color-text-secondary: #2C3E50;  /* Dark neutral – improved contrast with all semantic colors */
+  --color-text-inverse: #FFFFFF;    /* Use on colored backgrounds (semantic states, dark header) */
+  --color-text-muted: #6B7280;      /* Optional for placeholders or subtext on light surfaces */
+
+  /* Semantic Text Colors for Different Backgrounds */
+  --color-text-on-success: var(--color-text-secondary);
+  --color-text-on-warning: var(--color-text-secondary);
+  --color-text-on-error: var(--color-text-inverse);
+  --color-text-on-info: var(--color-text-secondary);
+
+  /* === Shadow Variables === */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Set Inter as the default font family */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Button color overrides */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.btn-primary:hover {
+  background-color: #1A3F6B;
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-text-inverse);
+}
+
+.btn-secondary:hover {
+  background-color: #3A80D2;
+}
+
+.btn-accent {
+  background-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
+.btn-accent:hover {
+  background-color: #E2941F;
+}
+
+/* Semantic button styles using theme colors */
+.btn-success {
+  background-color: var(--color-success);
+  color: var(--color-text-on-success);
+  border: none;
+}
+
+.btn-warning {
+  background-color: var(--color-warning);
+  color: var(--color-text-on-warning);
+  border: none;
+}
+
+.btn-error {
+  background-color: var(--color-error);
+  color: var(--color-text-on-error);
+  border: none;
+}
+
+.btn-info {
+  background-color: var(--color-info);
+  color: var(--color-text-on-info);
+  border: none;
+}
+
+/* Hover states for semantic buttons */
+.btn-success:hover {
+  background-color: #16A34A;
+}
+
+.btn-warning:hover {
+  background-color: #D97706;
+}
+
+.btn-error:hover {
+  background-color: #DC2626;
+}
+
+.btn-info:hover {
+  background-color: #2563EB;
+}
+
+/* Semantic tags and badges */
+.tag-success {
+  background-color: var(--color-success);
+  color: var(--color-text-on-success);
+}
+
+.tag-warning {
+  background-color: var(--color-warning);
+  color: var(--color-text-on-warning);
+}
+
+.tag-error {
+  background-color: var(--color-error);
+  color: var(--color-text-on-error);
+}
+
+.tag-info {
+  background-color: var(--color-info);
+  color: var(--color-text-on-info);
+}
