@@ -464,7 +464,11 @@ export function KanbanBoard({ onNavigateBack, onLogout, currentUser }: KanbanBoa
     priority?: string;
   }) => {
     try {
-      const newTask = await api.createTask(taskData);
+      const userToUse = currentUser || { id: 1, email: 'dev@test.com', firstName: 'Dev', lastName: 'User' };
+      const newTask = await api.createTask({
+        ...taskData,
+        userId: userToUse.id,
+      });
       const localTask = convertAPITaskToLocal(newTask);
       setTasks(prev => [...prev, localTask]);
       setShowAddTask(false);
@@ -648,10 +652,12 @@ export function KanbanBoard({ onNavigateBack, onLogout, currentUser }: KanbanBoa
           
           for (const aiTask of response.tasks) {
             try {
+              const userToUse = currentUser || { id: 1, email: 'dev@test.com', firstName: 'Dev', lastName: 'User' };
               const newTask = await api.createTask({
                 title: aiTask.title,
                 description: aiTask.description,
-                priority: aiTask.priority || 'MEDIUM'
+                priority: aiTask.priority || 'MEDIUM',
+                userId: userToUse.id,
               });
               
               const localNewTask = convertAPITaskToLocal(newTask);

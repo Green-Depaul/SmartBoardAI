@@ -131,20 +131,24 @@ export const api = {
     }),
 
   // Task Services (aligned with backend /board/items and TaskController)
-  // Note: current backend returns all tasks; user scoping can be added later.
-  getTasks: (_userId: number) => request<Task[]>(`/board/items`),
+  // User-specific task retrieval using assignedTo parameter
+  getTasks: (userId: number) => request<Task[]>(`/board/items?assignedTo=${userId}`),
 
-  getTasksByStatus: (_userId: number, status: string) =>
-    request<Task[]>(`/board/items?status=${encodeURIComponent(status)}`),
+  getTasksByStatus: (userId: number, status: string) =>
+    request<Task[]>(`/board/items?assignedTo=${userId}`), // Filter by user first, then filter by status on frontend
 
   createTask: (payload: {
     title: string;
     description?: string;
     priority?: string;
+    userId?: number;
   }) =>
     request<Task>(`/board/items`, {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        assignedTo: payload.userId?.toString(),
+      }),
     }),
 
   createTaskFromSuggestion: (payload: {
@@ -157,6 +161,7 @@ export const api = {
         title: payload.suggestion.title,
         description: payload.suggestion.description,
         priority: payload.suggestion.priority,
+        assignedTo: payload.userId.toString(),
       }),
     }),
 

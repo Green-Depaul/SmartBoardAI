@@ -24,6 +24,12 @@ export default function App() {
     try {
       window.localStorage.removeItem(USER_KEY);
       window.localStorage.removeItem(PAGE_KEY);
+      // Clear all user-specific chat data
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sbai.chat.')) {
+          localStorage.removeItem(key);
+        }
+      });
       console.log("🔄 Cleared localStorage for fresh start");
     } catch {}
   }, []);
@@ -32,6 +38,53 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("landing");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  // User-specific chat message management
+  const getChatKey = (userId: number) => `sbai.chat.${userId}`;
+
+  const loadUserMessages = (user: User) => {
+    try {
+      const chatKey = getChatKey(user.id);
+      const savedMessages = localStorage.getItem(chatKey);
+      if (savedMessages) {
+        const parsedMessages = JSON.parse(savedMessages);
+        // Restore timestamps as Date objects
+        const restoredMessages = parsedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(restoredMessages);
+        console.log(`🔄 Loaded ${restoredMessages.length} chat messages for user ${user.email}`);
+      } else {
+        setMessages(initialMessages);
+        console.log(`🆕 No saved chat history for user ${user.email}`);
+      }
+    } catch (error) {
+      console.error('Error loading user messages:', error);
+      setMessages(initialMessages);
+    }
+  };
+
+  const saveUserMessages = (user: User, messagesToSave: Message[]) => {
+    try {
+      const chatKey = getChatKey(user.id);
+      localStorage.setItem(chatKey, JSON.stringify(messagesToSave));
+    } catch (error) {
+      console.error('Error saving user messages:', error);
+    }
+  };
+
+  const clearUserMessages = () => {
+    setMessages(initialMessages);
+    console.log("🧹 Cleared chat messages for user switch");
+  };
+
+  // Auto-save messages when they change (for current user)
+  useEffect(() => {
+    if (currentUser && messages.length > 0) {
+      saveUserMessages(currentUser, messages);
+    }
+  }, [messages, currentUser]);
 
 
 
@@ -43,7 +96,15 @@ export default function App() {
   };
 
   const navigateToLanding = () => {
+    // Save current user's messages before logout
+    if (currentUser) {
+      saveUserMessages(currentUser, messages);
+    }
+    
+    // Clear current state
     setCurrentUser(null);
+    clearUserMessages();
+    
     try {
       window.localStorage.removeItem(USER_KEY);
       window.localStorage.setItem(PAGE_KEY, "landing");
@@ -63,6 +124,7 @@ export default function App() {
 
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
+    loadUserMessages(user); // Load user-specific chat history
     try {
       window.localStorage.setItem(USER_KEY, JSON.stringify(user));
       window.localStorage.setItem(PAGE_KEY, "chat");
@@ -72,6 +134,7 @@ export default function App() {
 
   const handleSignupSuccess = (user: User) => {
     setCurrentUser(user);
+    loadUserMessages(user); // Load user-specific chat history (will be empty for new users)
     try {
       window.localStorage.setItem(USER_KEY, JSON.stringify(user));
       window.localStorage.setItem(PAGE_KEY, "chat");
