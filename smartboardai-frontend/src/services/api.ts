@@ -74,12 +74,21 @@ export interface AIResponse {
   request_id?: string;
 }
 
-// Backend base URL - use relative URLs in development to leverage Vite proxy
-const API_BASE_URL = window.location.hostname === 'localhost' ? '/api' : 'http://localhost:8080/api';
+const BACKEND_BASE_URL =
+  import.meta.env.VITE_BACKEND_BASE_URL ??
+  (window.location.hostname === 'localhost' ? '/api' : 'http://localhost:8080/api');
+
+const AI_SERVICE_BASE_URL =
+  import.meta.env.VITE_AI_BASE_URL ??
+  (window.location.hostname === 'localhost'
+    ? 'http://localhost:8000/api'
+    : 'http://localhost:8000/api');
+
+const AI_PLAN_BASE_URL = `${AI_SERVICE_BASE_URL.replace(/\/$/, '')}/ai`;
 
 // Base request function
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${BACKEND_BASE_URL}${endpoint}`;
   
   const config: RequestInit = {
     headers: {
@@ -125,10 +134,14 @@ export const api = {
 
   // AI Services
   generatePlan: (message: string) =>
-    request<AIResponse>(`/ai/generate-plan`, {
-      method: "POST",
-      body: JSON.stringify({ message: message }),
-    }),
+    requestWithBase<AIResponse>(
+      AI_PLAN_BASE_URL,
+      `/generate-plan`,
+      {
+        method: "POST",
+        body: JSON.stringify({ message }),
+      }
+    ),
 
   // Task Services (aligned with backend /board/items and TaskController)
   // User-specific task retrieval using assignedTo parameter
@@ -197,8 +210,40 @@ export const api = {
     request<{ status: string }>(`/users/health`),
 
   aiHealth: () =>
-    request<{ status: string; timestamp: string }>(`/ai/health`),
+    requestWithBase<{ status: string; timestamp: string }>(
+      AI_SERVICE_BASE_URL,
+      `/health`
+    ),
 
   taskHealth: () =>
     request<{ status: string }>(`/tasks/health`),
 };
+
+async function requestWithBase<T>(
+  baseUrl: string,
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const url = `${baseUrl.replace(/\/$/, "")}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+
+  const config: RequestInit = {
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  const response = await fetch(url, config);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API Error: ${response.status} - ${errorText}`);
+  }
+
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  return response.json();
+}
