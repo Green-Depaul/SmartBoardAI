@@ -28,9 +28,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/api/users/**").permitAll()
-                .requestMatchers("/users/register", "/users/login", "/users/health", "/ai/**", "/tasks/**", "/board/**", "/api/board/**", "/h2-console/**").permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable())) // Allow H2 console frames
             .httpBasic(httpBasic -> httpBasic.disable())
