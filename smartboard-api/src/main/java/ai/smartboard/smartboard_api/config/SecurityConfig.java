@@ -29,7 +29,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/users/**").permitAll()
-                .requestMatchers("/users/register", "/users/login", "/users/health", "/ai/**", "/tasks/**", "/board/**", "/api/board/**", "/h2-console/**").permitAll()
+                .requestMatchers("/users/register", "/users/login", "/users/health", "/ai/**", "/tasks/**", "/board/**", "/api/board/**", "/h2-console/**", "/error").permitAll()
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable())) // Allow H2 console frames
