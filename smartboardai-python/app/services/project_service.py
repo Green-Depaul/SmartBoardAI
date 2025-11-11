@@ -166,8 +166,10 @@ Please break this down into {max_tasks} specific, actionable tasks."""
             else:
                 return {"success": False, "tasks": [], "error_message": f"AI service error: {e}"}
         except Exception as e:
+            import traceback
             api_logger.error(f"Unexpected error calling AI service: {e}")
-            return {"success": False, "tasks": [], "error_message": "Internal server error"}
+            api_logger.error(f"Traceback: {traceback.format_exc()}")
+            return {"success": False, "tasks": [], "error_message": f"Internal server error: {str(e)}"}
     
     async def _get_context_with_fallback(self, user_id: str, project_id: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
         """Get context data with fallback to demo data"""

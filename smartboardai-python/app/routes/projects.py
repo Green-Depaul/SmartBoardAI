@@ -76,9 +76,11 @@ async def generate_plan(request: GeneratePlanRequest):
         )
         
     except Exception as e:
+        import traceback
         api_logger.error(f"Unexpected error in generate_plan: {e}")
+        api_logger.error(f"Traceback: {traceback.format_exc()}")
         return GeneratePlanResponse(
             success=False,
             tasks=[],
-            error_message="Internal server error"
+            error_message=f"Internal server error: {str(e)}"
         )
