@@ -38,6 +38,9 @@ public class AIService {
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restTemplate.postForObject(url, entity, Map.class);
 
+            // Log the response for debugging
+            System.out.println("Python service response: " + response);
+
             // Transform Python response to our AIResponse
             String plan = "Generated plan";
             if (response != null && response.get("project_summary") != null) {
@@ -46,8 +49,13 @@ public class AIService {
 
             List<AIResponse.TaskSuggestion> suggestions = new ArrayList<>();
             Object tasksObj = response != null ? response.get("tasks") : null;
+            System.out.println("Tasks object type: " + (tasksObj != null ? tasksObj.getClass().getName() : "null"));
+            System.out.println("Tasks object: " + tasksObj);
+            
             if (tasksObj instanceof List<?> tasksList) {
+                System.out.println("Tasks list size: " + tasksList.size());
                 for (Object item : tasksList) {
+                    System.out.println("Task item: " + item + " (type: " + item.getClass().getName() + ")");
                     if (item instanceof Map<?, ?> taskMap) {
                         Object titleObj = taskMap.get("title");
                         String title = titleObj != null ? titleObj.toString() : "Task";
@@ -72,7 +80,11 @@ public class AIService {
                         suggestions.add(new AIResponse.TaskSuggestion(title, description, priority, est, category));
                     }
                 }
+            } else {
+                System.out.println("Tasks object is not a List. Type: " + (tasksObj != null ? tasksObj.getClass().getName() : "null"));
             }
+
+            System.out.println("Final suggestions count: " + suggestions.size());
 
             AIResponse aiResponse = new AIResponse(true, suggestions, plan);
             // Calculate total estimated hours
@@ -82,6 +94,10 @@ public class AIService {
             aiResponse.setTotalEstimatedHours(totalHours);
             return aiResponse;
         } catch (Exception e) {
+            // Log the full exception
+            System.err.println("Error calling Python service: " + e.getMessage());
+            e.printStackTrace();
+            
             // Fallback minimal response on error
             List<AIResponse.TaskSuggestion> suggestions = new ArrayList<>();
             suggestions.add(new AIResponse.TaskSuggestion(
