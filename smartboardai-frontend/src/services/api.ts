@@ -134,14 +134,10 @@ export const api = {
 
   // AI Services
   generatePlan: (message: string) =>
-    requestWithBase<AIResponse>(
-      AI_PLAN_BASE_URL,
-      `/generate-plan`,
-      {
-        method: "POST",
-        body: JSON.stringify({ message }),
-      }
-    ),
+    request<AIResponse>(`/ai/generate-plan`, {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }),
 
   // Task Services (aligned with backend /board/items and TaskController)
   // User-specific task retrieval using assignedTo parameter
