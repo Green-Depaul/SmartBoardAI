@@ -69,9 +69,9 @@ async def generate_plan(request: GeneratePlanRequest):
         return GeneratePlanResponse(
             success=result["success"],
             tasks=result["tasks"],
-            total_estimated_hours=result["total_estimated_hours"],
-            project_summary=result["project_summary"],
-            recommendations=result["recommendations"],
+            total_estimated_hours=result.get("total_estimated_hours"),
+            project_summary=result.get("project_summary"),
+            recommendations=result.get("recommendations", []),
             error_message=result.get("error_message")
         )
         

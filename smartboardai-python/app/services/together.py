@@ -26,6 +26,12 @@ async def chat_completion(messages: list, temperature: float = 0.2, max_tokens: 
         "temperature": temperature,
         "max_tokens": max_tokens,
     }
+    # Validate URL
+    if not settings.together_base_url or not settings.together_base_url.startswith(('http://', 'https://')):
+        error_msg = f"Invalid TOGETHER_BASE_URL: {settings.together_base_url}. Must start with http:// or https://"
+        together_logger.error(error_msg)
+        raise TogetherAIError(error_msg, 500)
+    
     url = f"{settings.together_base_url.rstrip('/')}/chat/completions"
     
     try:
